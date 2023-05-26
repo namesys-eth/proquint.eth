@@ -1,0 +1,11 @@
+cache/
+.env
+*/.DS_store
+.DS_store
+broadcast/
+scratch/
+out/
+docs/
+node_modules
+lib
+*.log

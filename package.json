@@ -1,0 +1,10 @@
+{
+  "name": "proquint-eth",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "node ./test/test.js"
+  },
+  "author": "0xc0de4c0ffee <43116881+0xc0de4c0ffee@users.noreply.github.com>",
+  "license": "MIT"
+}
