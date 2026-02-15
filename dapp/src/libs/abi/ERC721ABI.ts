@@ -1,0 +1,392 @@
+// ABI for ProquintNFT (L1) — single standalone contract
+// Covers: ERC-721, commit-reveal, register/registerTo/registerPremium, renew,
+//         inbox (acceptInbox, rejectInbox, cleanInbox, shelve), registry helpers
+export const PROQUINT_ABI = [
+  // ============ ERC-721 ============
+  {
+    type: 'function',
+    name: 'name',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ type: 'string' }],
+  },
+  {
+    type: 'function',
+    name: 'symbol',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ type: 'string' }],
+  },
+  {
+    type: 'function',
+    name: 'balanceOf',
+    stateMutability: 'view',
+    inputs: [{ name: 'a', type: 'address' }],
+    outputs: [{ type: 'uint256' }],
+  },
+  {
+    type: 'function',
+    name: 'ownerOf',
+    stateMutability: 'view',
+    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    outputs: [{ type: 'address' }],
+  },
+  {
+    type: 'function',
+    name: 'tokenURI',
+    stateMutability: 'view',
+    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    outputs: [{ type: 'string' }],
+  },
+  {
+    type: 'function',
+    name: 'getApproved',
+    stateMutability: 'view',
+    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    outputs: [{ type: 'address' }],
+  },
+  {
+    type: 'function',
+    name: 'isApprovedForAll',
+    stateMutability: 'view',
+    inputs: [{ name: 'a', type: 'address' }, { name: 'op', type: 'address' }],
+    outputs: [{ type: 'bool' }],
+  },
+  {
+    type: 'function',
+    name: 'approve',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'to', type: 'address' }, { name: 'tokenId', type: 'uint256' }],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'setApprovalForAll',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'operator', type: 'address' }, { name: 'approved', type: 'bool' }],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'transferFrom',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'from', type: 'address' },
+      { name: 'to', type: 'address' },
+      { name: 'tokenId', type: 'uint256' },
+    ],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'safeTransferFrom',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'from', type: 'address' },
+      { name: 'to', type: 'address' },
+      { name: 'tokenId', type: 'uint256' },
+    ],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'safeTransferFrom',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'from', type: 'address' },
+      { name: 'to', type: 'address' },
+      { name: 'tokenId', type: 'uint256' },
+      { name: 'data', type: 'bytes' },
+    ],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'supportsInterface',
+    stateMutability: 'pure',
+    inputs: [{ name: 'interfaceId', type: 'bytes4' }],
+    outputs: [{ type: 'bool' }],
+  },
+  {
+    type: 'function',
+    name: 'totalSupply',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ type: 'uint256' }],
+  },
+
+  // ============ Commit-Reveal ============
+  {
+    type: 'function',
+    name: 'makeCommitment',
+    stateMutability: 'pure',
+    inputs: [{ name: 'input', type: 'bytes32' }, { name: 'recipient', type: 'address' }],
+    outputs: [{ type: 'bytes32' }],
+  },
+  {
+    type: 'function',
+    name: 'commit',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'commitment', type: 'bytes32' }],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'register',
+    stateMutability: 'payable',
+    inputs: [{ name: 'input', type: 'bytes32' }],
+    outputs: [{ name: 'tokenId', type: 'uint256' }],
+  },
+  {
+    type: 'function',
+    name: 'registerTo',
+    stateMutability: 'payable',
+    inputs: [{ name: 'input', type: 'bytes32' }, { name: 'to', type: 'address' }],
+    outputs: [{ name: 'tokenId', type: 'uint256' }],
+  },
+  {
+    type: 'function',
+    name: 'registerPremium',
+    stateMutability: 'payable',
+    inputs: [{ name: 'input', type: 'bytes32' }],
+    outputs: [{ name: 'tokenId', type: 'uint256' }],
+  },
+  {
+    type: 'function',
+    name: 'renew',
+    stateMutability: 'payable',
+    inputs: [{ name: 'input', type: 'bytes32' }],
+    outputs: [],
+  },
+
+  // ============ Inbox ============
+  {
+    type: 'function',
+    name: 'inboxCount',
+    stateMutability: 'view',
+    inputs: [{ name: 'user', type: 'address' }],
+    outputs: [{ type: 'uint8' }],
+  },
+  {
+    type: 'function',
+    name: 'inboxExpiry',
+    stateMutability: 'view',
+    inputs: [{ name: 'id', type: 'bytes4' }],
+    outputs: [{ type: 'uint64' }],
+  },
+  {
+    type: 'function',
+    name: 'totalInbox',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ type: 'uint256' }],
+  },
+  {
+    type: 'function',
+    name: 'acceptInbox',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'id', type: 'bytes4' }],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'shelve',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'id', type: 'bytes4' }],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'rejectInbox',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'id', type: 'bytes4' }],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'cleanInbox',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'id', type: 'bytes4' }],
+    outputs: [],
+  },
+
+  // ============ Registry helpers ============
+  {
+    type: 'function',
+    name: 'owner',
+    stateMutability: 'view',
+    inputs: [{ name: 'node', type: 'bytes32' }],
+    outputs: [{ type: 'address' }],
+  },
+  {
+    type: 'function',
+    name: 'owner',
+    stateMutability: 'view',
+    inputs: [{ name: 'id', type: 'bytes4' }],
+    outputs: [{ type: 'address' }],
+  },
+  {
+    type: 'function',
+    name: 'recordExists',
+    stateMutability: 'view',
+    inputs: [{ name: 'node', type: 'bytes32' }],
+    outputs: [{ type: 'bool' }],
+  },
+  {
+    type: 'function',
+    name: 'recordExists',
+    stateMutability: 'view',
+    inputs: [{ name: 'id', type: 'bytes4' }],
+    outputs: [{ type: 'bool' }],
+  },
+  {
+    type: 'function',
+    name: 'isProquint',
+    stateMutability: 'view',
+    inputs: [{ name: 'node', type: 'bytes32' }],
+    outputs: [{ type: 'bool' }],
+  },
+  {
+    type: 'function',
+    name: 'primaryName',
+    stateMutability: 'view',
+    inputs: [{ name: 'user', type: 'address' }],
+    outputs: [{ type: 'bytes4' }],
+  },
+  {
+    type: 'function',
+    name: 'commitments',
+    stateMutability: 'view',
+    inputs: [{ name: '', type: 'bytes32' }],
+    outputs: [{ type: 'uint256' }],
+  },
+  {
+    type: 'function',
+    name: 'expiresAt',
+    stateMutability: 'view',
+    inputs: [{ name: '', type: 'bytes4' }],
+    outputs: [{ type: 'uint64' }],
+  },
+  {
+    type: 'function',
+    name: 'getNode',
+    stateMutability: 'pure',
+    inputs: [{ name: 'id', type: 'bytes4' }],
+    outputs: [{ type: 'bytes32' }],
+  },
+  {
+    type: 'function',
+    name: 'getExpiry',
+    stateMutability: 'view',
+    inputs: [{ name: 'id', type: 'bytes4' }],
+    outputs: [{ type: 'uint64' }],
+  },
+  {
+    type: 'function',
+    name: 'isAvailable',
+    stateMutability: 'view',
+    inputs: [{ name: 'id', type: 'bytes4' }],
+    outputs: [{ type: 'bool' }],
+  },
+  {
+    type: 'function',
+    name: 'inPremium',
+    stateMutability: 'view',
+    inputs: [{ name: 'id', type: 'bytes4' }],
+    outputs: [{ type: 'bool' }],
+  },
+
+  // ============ ERC-173 ============
+  {
+    type: 'function',
+    name: 'owner',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ type: 'address' }],
+  },
+  {
+    type: 'function',
+    name: 'setTokenURI',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'newGenerator', type: 'address' }],
+    outputs: [],
+  },
+
+  // ============ Events ============
+  {
+    type: 'event',
+    name: 'Transfer',
+    inputs: [
+      { name: 'from', type: 'address', indexed: true },
+      { name: 'to', type: 'address', indexed: true },
+      { name: 'tokenId', type: 'uint256', indexed: true },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'Approval',
+    inputs: [
+      { name: 'owner', type: 'address', indexed: true },
+      { name: 'approved', type: 'address', indexed: true },
+      { name: 'tokenId', type: 'uint256', indexed: true },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'ApprovalForAll',
+    inputs: [
+      { name: 'owner', type: 'address', indexed: true },
+      { name: 'operator', type: 'address', indexed: true },
+      { name: 'approved', type: 'bool', indexed: false },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'Committed',
+    inputs: [
+      { name: 'commitment', type: 'bytes32', indexed: true },
+      { name: 'committer', type: 'address', indexed: true },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'Renewed',
+    inputs: [
+      { name: 'id', type: 'bytes4', indexed: true },
+      { name: 'newExpiry', type: 'uint64', indexed: false },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'PrimaryUpdated',
+    inputs: [
+      { name: 'user', type: 'address', indexed: true },
+      { name: 'id', type: 'bytes4', indexed: true },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'InboxUpdated',
+    inputs: [
+      { name: 'user', type: 'address', indexed: true },
+      { name: 'id', type: 'bytes4', indexed: true },
+      { name: 'inboxExpiry', type: 'uint64', indexed: false },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'OwnershipTransferred',
+    inputs: [
+      { name: 'previousOwner', type: 'address', indexed: true },
+      { name: 'newOwner', type: 'address', indexed: true },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'TokenURIUpdated',
+    inputs: [
+      { name: 'oldGenerator', type: 'address', indexed: true },
+      { name: 'newGenerator', type: 'address', indexed: true },
+    ],
+  },
+] as const

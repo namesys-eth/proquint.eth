@@ -7,5 +7,4 @@ scratch/
 out/
 docs/
 node_modules
-lib
 *.log

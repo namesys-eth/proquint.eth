@@ -1,8 +1,19 @@
 // SPDX-License-Identifier: WTFPL.ETH
 pragma solidity >0.8.18 <0.9.0;
 
+/**
+ * @title Proquint
+ * @notice Legacy reference implementation of proquint encode/decode (non-optimized).
+ * @dev Kept for compatibility. See LibProquint for the gas-optimized assembly version.
+ */
 contract Proquint {
-    //Ref : https://github.com/deoxxa/proquint/blob/master/encode.js
+    /**
+     * @notice Encode a 4-byte value into a proquint string with a custom delimiter.
+     * @dev Reference: https://github.com/deoxxa/proquint/blob/master/encode.js
+     * @param input 4-byte value to encode.
+     * @param d Delimiter byte (e.g. `-` or `.`).
+     * @return 11-character proquint string.
+     */
     function encode(bytes4 input, bytes1 d) external pure returns (string memory) {
         unchecked {
             bytes16 c16 = bytes16("bdfghjklmnprstvz");
@@ -31,7 +42,12 @@ contract Proquint {
         }
     }
 
-    //Ref: https://github.com/deoxxa/proquint/blob/master/decode.js
+    /**
+     * @notice Decode an 11-character proquint string back into 4 bytes.
+     * @dev Reference: https://github.com/deoxxa/proquint/blob/master/decode.js
+     * @param input 11-character proquint string (separator: `.` or `-`).
+     * @return Decoded 4-byte value.
+     */
     function decode(string memory input) external pure returns (bytes4) {
         unchecked {
             bytes26 alpha = hex"0000fa01fb020304010506070809020afc0b0c0d030efdfeff0f";
