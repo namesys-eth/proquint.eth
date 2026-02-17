@@ -22,10 +22,6 @@ contract LibProquintMock {
         return LibProquint.decode(input);
     }
 
-    function decodeFromCalldata(bytes calldata b, uint256 start) external pure returns (bytes4) {
-        return LibProquint.decodeFromCalldata(b, start);
-    }
-
     function normalize(bytes4 id) external pure returns (bytes4) {
         return LibProquint.normalize(id);
     }
@@ -210,29 +206,5 @@ contract LibProquintTest is Test {
         bytes4 nb = mock.normalize(b);
         vm.assume(na != nb);
         assertTrue(mock.namehash4(a) != mock.namehash4(b));
-    }
-
-    // ── decodeFromCalldata ──────────────────────────────────────────
-
-    function test_decodeFromCalldata() public view {
-        bytes4 norm = mock.normalize(bytes4(0x12345678));
-        bytes11 label = mock.encode(norm);
-        bytes memory data = abi.encodePacked(label);
-        bytes4 decoded = mock.decodeFromCalldata(data, 0);
-        assertEq(decoded, norm);
-    }
-
-    function test_decodeFromCalldata_with_offset() public view {
-        bytes4 norm = mock.normalize(bytes4(0x12345678));
-        bytes11 label = mock.encode(norm);
-        bytes memory data = abi.encodePacked(bytes5(0x0000000000), label);
-        bytes4 decoded = mock.decodeFromCalldata(data, 5);
-        assertEq(decoded, norm);
-    }
-
-    function test_decodeFromCalldata_reverts_short() public {
-        bytes memory data = hex"0102030405060708090a"; // 10 bytes, need 11
-        vm.expectRevert("LibProquint: len");
-        mock.decodeFromCalldata(data, 0);
     }
 }
