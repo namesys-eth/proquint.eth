@@ -114,24 +114,6 @@ library LibProquint {
     }
 
     /**
-     * @notice Decode a proquint ID from 11 bytes at a given offset in calldata.
-     * @dev Useful for parsing DNS-wire format labels directly from calldata.
-     * @param b Calldata byte array.
-     * @param start Byte offset where the 11-byte label begins.
-     * @return out Normalized 4-byte proquint ID.
-     */
-    function decodeFromCalldata(bytes calldata b, uint256 start) internal pure returns (bytes4 out) {
-        require(b.length >= start + 11, "LibProquint: len");
-        bytes11 lab;
-        assembly ("memory-safe") {
-            mstore(0, 0)
-            calldatacopy(0, add(b.offset, start), 11)
-            lab := mload(0)
-        }
-        return decode(lab);
-    }
-
-    /**
      * @notice Decode an 11-byte proquint label into a normalized 4-byte ID.
      * @dev Expects a `-` separator at position 5. Auto-normalizes (smaller half first).
      * @param input 11-byte ASCII label (e.g. `babab-dabab`).

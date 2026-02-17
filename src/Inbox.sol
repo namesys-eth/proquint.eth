@@ -17,7 +17,6 @@ import {SafeTransferLib} from "solady/utils/SafeTransferLib.sol";
  *      or `cleanInbox` (→ burned with reward split).
  */
 abstract contract ProquintInbox is Core {
-
     /**
      * @notice Pending inbox count.
      *  @param user Address to query.

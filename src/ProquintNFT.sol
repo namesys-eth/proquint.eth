@@ -196,7 +196,9 @@ contract ProquintNFT is ProquintInbox, ReentrancyGuard {
         bytes4 ID = bytes4(uint32(tokenId));
         address o = _ownerOf[ID];
         require(o == from, NotMinted());
-        require(msg.sender == from || msg.sender == _getApproved[ID] || _isApprovedForAll[from][msg.sender], Unauthorized());
+        require(
+            msg.sender == from || msg.sender == _getApproved[ID] || _isApprovedForAll[from][msg.sender], Unauthorized()
+        );
 
         require(expiresAt[ID] > block.timestamp, Expired());
         require(_inboxExpiry[ID] == 0, AlreadyInInbox());

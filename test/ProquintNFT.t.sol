@@ -99,7 +99,6 @@ contract ProquintNFTTest is Test {
         vm.prank(alice);
         vm.expectRevert(Core.NotOwner.selector);
         nft.transferOwnership(bob);
-
     }
 
     function test_transferOwnership_revert_zeroAddress() public {
@@ -884,7 +883,6 @@ contract ProquintNFTTest is Test {
         vm.prank(alice);
         vm.expectRevert(Core.NotOwner.selector);
         nft.withdraw();
-
     }
 
     // ════════════════════════════════════════════════════════════════
