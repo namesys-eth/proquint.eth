@@ -63,15 +63,21 @@ main {
   .registration-inputs {
     flex: 1;
   }
+
+  .year-hex-grid {
+    grid-template-columns: 1fr 1.5fr !important;
+  }
 }
 
 header {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   padding: 1rem;
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 1000 !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .header-content {
@@ -194,7 +200,7 @@ nav button {
   border: 1px solid transparent;
   color: var(--text-dim);
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 1rem;
   border-radius: 6px;
   transition: all 0.2s;
   white-space: nowrap;
@@ -234,7 +240,7 @@ nav button.active:hover:not(:disabled) {
   nav button {
     width: auto;
     padding: 0.45rem 1.25rem;
-    font-size: 0.9rem;
+    font-size: 1.05rem;
     text-align: center;
   }
 }
@@ -306,8 +312,9 @@ main {
 label {
   display: block;
   margin-bottom: 0.5rem;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   color: var(--text-dim);
+  font-weight: 500;
 }
 
 input, select {
@@ -383,17 +390,20 @@ button.secondary:hover:not(:disabled) {
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 6px;
+  text-align: center;
 }
 
 .info-label {
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   color: var(--text-dim);
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.3rem;
+  font-weight: 500;
 }
 
 .info-value {
-  font-size: 0.95rem;
+  font-size: 1.1rem;
   color: var(--text);
+  font-weight: 600;
   font-family: 'SF Mono', 'Monaco', monospace;
 }
 
@@ -457,11 +467,11 @@ button.secondary:hover:not(:disabled) {
   }
   
   .info-label {
-    font-size: 0.9rem;
+    font-size: 1rem;
   }
   
   .info-value {
-    font-size: 1.05rem;
+    font-size: 1.2rem;
   }
 }
 

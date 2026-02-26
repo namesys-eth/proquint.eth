@@ -5,9 +5,7 @@ import { CONTRACTS } from '../../libs/contracts'
 import { PROQUINT_ABI } from '../../libs/abi/ERC721ABI'
 import { normalizeBytes4 } from '../../libs/proquint'
 
-const isDebug =
-  typeof import.meta !== 'undefined' &&
-  Boolean((import.meta as Record<string, any>)?.env?.MODE !== 'production')
+const isDebug = false // Disabled to prevent console spam
 
 interface IdenticonProps {
   address?: string | null

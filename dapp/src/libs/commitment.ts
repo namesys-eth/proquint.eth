@@ -67,7 +67,7 @@ export function getCommitment(commitment: `0x${string}`): CommitmentData | null 
 
 export function checkCommitmentAge(timestamp: number): { ready: boolean; expired: boolean; waitTime?: number } {
   const elapsed = Date.now() - timestamp
-  const MIN_WAIT = 5_000   // 5 seconds — MIN_COMMITMENT_AGE
+  const MIN_WAIT = 25_000  // 25 seconds — MIN_COMMITMENT_AGE (2 blocks + 1s)
   const MAX_WAIT = 15 * 60 * 1000 // 15 minutes — MAX_COMMITMENT_AGE
 
   if (elapsed < MIN_WAIT) {

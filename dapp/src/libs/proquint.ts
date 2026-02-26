@@ -88,10 +88,10 @@ export function proquintToBytes4(proquint: string): `0x${string}` {
 }
 
 /**
- * Check if a bytes4 ID is palindromic
- * Matches LibProquint.sol isPalindromic() function
+ * Check if a bytes4 ID is a twin (both 16-bit halves identical).
+ * Matches LibProquint.sol isTwin() function.
  */
-export function isPalindromic(bytes: `0x${string}`): boolean {
+export function isTwin(bytes: `0x${string}`): boolean {
   const hex = bytes.slice(2).padStart(8, '0')
   const first = parseInt(hex.slice(0, 4), 16)
   const second = parseInt(hex.slice(4, 8), 16)
@@ -146,12 +146,30 @@ export function formatPrice(price: bigint): string {
   return eth.toFixed(6)
 }
 
-export function calculatePrice(years: number, isPalindromic: boolean = false): bigint {
+export function calculatePrice(years: number, isTwin: boolean = false): bigint {
   // Formula from Core.sol: (2^yrs - 1) * PRICE_PER_YEAR
-  // PRICE_PER_YEAR = 0.00024 ETH = 240_000_000_000_000 wei
-  const PRICE_PER_YEAR = 240_000_000_000_000n
+  // PRICE_PER_YEAR = 0.00036 ETH = 360_000_000_000_000 wei
+  const PRICE_PER_YEAR = 360_000_000_000_000n
   const multiplier = (1n << BigInt(years)) - 1n
   let price = multiplier * PRICE_PER_YEAR
-  if (isPalindromic) price *= 5n
+  if (isTwin) price *= 5n
+  return price
+}
+
+/**
+ * Calculate renewal price using marginal exponential pricing.
+ * Matches Core.sol renewPriceWei: fee = ((2^total - 2^floored) * PRICE_PER_YEAR) * twinMultiplier
+ * @param years Extension years
+ * @param remainingSeconds Seconds remaining until current expiry
+ * @param isTwin Whether the ID is a twin
+ */
+export function calculateRenewPrice(years: number, remainingSeconds: number, isTwin: boolean = false): bigint {
+  const PRICE_PER_YEAR = 360_000_000_000_000n
+  const YEAR_SECONDS = 365 * 24 * 60 * 60
+  const floored = Math.floor(remainingSeconds / YEAR_SECONDS)
+  const total = floored + years
+  if (total > 12) return 0n
+  let price = ((1n << BigInt(total)) - (1n << BigInt(floored))) * PRICE_PER_YEAR
+  if (isTwin) price *= 5n
   return price
 }

@@ -71,23 +71,26 @@ export function useInboxItems(address: `0x${string}` | undefined) {
         // Get InboxUpdated logs for this user
         const logs = await client!.getLogs({
           address: CONTRACTS.ProquintNFT,
-          event: parseAbiItem('event InboxUpdated(address indexed user, bytes4 indexed id, uint64 inboxExpiry)'),
+          event: parseAbiItem('event InboxUpdated(address indexed user, bytes4 indexed id, uint64 indexed inboxExpiry)'),
           args: { user: address },
           fromBlock: 0n,
           toBlock: 'latest',
         })
 
         // Build a map of latest inboxExpiry per ID from logs
+        // Process logs in order to get the most recent state per ID
         // Indexed bytes4 comes back padded — extract real bytes4
         const latestByIdHex = new Map<string, bigint>()
         for (const log of logs) {
           if (!log.args.id || log.args.inboxExpiry === undefined || log.args.inboxExpiry === null) continue
           const id = topicToBytes4(log.args.id as `0x${string}`)
           const ie = log.args.inboxExpiry as bigint
+          // Update with latest value (logs are in chronological order)
           latestByIdHex.set(id, ie)
         }
 
         // Filter to IDs where the last log had inboxExpiry > 0 (still in inbox per logs)
+        // If inboxExpiry is 0, the item was removed from inbox (burned/accepted/rejected)
         const candidateIds = [...latestByIdHex.entries()]
           .filter(([, ie]) => ie > 0n)
           .map(([id]) => id as `0x${string}`)
@@ -133,9 +136,9 @@ export function useInboxItems(address: `0x${string}` | undefined) {
 
           // Only include if still in inbox and owned by this user
           if (ie > 0n && owner && owner.toLowerCase() === address!.toLowerCase()) {
-            let proquint = id
+            let proquint: string = id
             try {
-              proquint = bytes4ToProquint(id)
+              proquint = bytes4ToProquint(id).toUpperCase()
             } catch {
               // fallback to hex
             }

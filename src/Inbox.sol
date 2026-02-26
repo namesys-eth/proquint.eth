@@ -10,17 +10,19 @@ import {SafeTransferLib} from "solady/utils/SafeTransferLib.sol";
  * @notice Inbox system for proquint name transfers and state management.
  * @dev Each token is in exactly one of two states:
  *      - **Inbox**: `_inboxExpiry[ID] != 0` — pending acceptance by the receiver.
- *      - **Primary**: `_primaryName[owner] == ID` — active primary name.
+ *      - **Primary**: `_primary[owner] == ID` — active primary name.
  *
  *      Tokens enter inbox via `transferFrom`, `registerTo`, or `shelve`.
  *      Tokens leave inbox via `acceptInbox` (→ primary), `rejectInbox` (→ burned),
  *      or `cleanInbox` (→ burned with reward split).
  */
 abstract contract ProquintInbox is Core {
+    error InvalidLength();
+    
     /**
      * @notice Pending inbox count.
      *  @param user Address to query.
-     *  @return Count (max 255).
+     *  @return Count (max 45).
      */
     function inboxCount(address user) external view returns (uint8) {
         return _inboxCount[user];
@@ -45,23 +47,18 @@ abstract contract ProquintInbox is Core {
 
     /**
      * @notice Accept an inbox item, promoting it to the receiver's primary name.
-     * @dev Callable by the receiver before inbox expiry, or by anyone during the
-     *      ANYONE_PERIOD window after expiry (to help activate on behalf of receiver).
+     * @dev Only callable by the receiver before inbox expiry.
      *      Reverts if the receiver already has a primary name.
      * @param id Raw proquint ID (auto-normalized).
      */
     function acceptInbox(bytes4 id) external {
         bytes4 ID = LibProquint.normalize(id);
         uint64 ie = _inboxExpiry[ID];
-        require(ie != 0, NotInInbox());
+        require(ie >= block.timestamp, InboxExpired());
 
         address receiver = _ownerOf[ID];
-        require(receiver != address(0), NotInInbox());
-
-        bool ok = (ie >= block.timestamp && msg.sender == receiver)
-            || (block.timestamp > ie && ie + ANYONE_PERIOD >= block.timestamp);
-        require(ok, NotReceiver());
-        require(_primaryName[receiver] == bytes4(0), HasPrimary());
+        require(receiver == msg.sender, NotReceiver());
+        require(_primary[receiver] == bytes4(0), HasPrimary());
 
         // Transition: inbox → primary
         delete _inboxExpiry[ID];
@@ -69,8 +66,31 @@ abstract contract ProquintInbox is Core {
             --_inboxCount[receiver];
             --_totalInbox;
         }
-        _primaryName[receiver] = ID;
-        emit InboxUpdated(receiver, ID, 0);
+        _primary[receiver] = ID;
+        emit PrimaryUpdated(receiver, ID);
+    }
+
+    /**
+     * @notice Accept an inbox item on behalf of the receiver during ANYONE_PERIOD.
+     * @dev Only callable during the ANYONE_PERIOD window after inbox expiry.
+     *      Helps activate names for receivers who haven't claimed them.
+     * @param id Raw proquint ID (auto-normalized).
+     */
+    function acceptInboxOnBehalf(bytes4 id) external {
+        bytes4 ID = LibProquint.normalize(id);
+        uint64 ie = _inboxExpiry[ID];
+        require(block.timestamp > ie && ie + ANYONE_PERIOD >= block.timestamp, InboxExpired());
+
+        address receiver = _ownerOf[ID];
+        require(_primary[receiver] == bytes4(0), HasPrimary());
+
+        // Transition: inbox → primary
+        delete _inboxExpiry[ID];
+        unchecked {
+            --_inboxCount[receiver];
+            --_totalInbox;
+        }
+        _primary[receiver] = ID;
         emit PrimaryUpdated(receiver, ID);
     }
 
@@ -86,25 +106,33 @@ abstract contract ProquintInbox is Core {
         address o = _ownerOf[ID];
         require(o == msg.sender, NotOwner());
         require(_inboxExpiry[ID] == 0, AlreadyInInbox());
-        require(_primaryName[o] == ID, NotPrimary());
-        require(expiresAt[ID] > block.timestamp, Expired());
-        require(_inboxCount[o] < type(uint8).max, InboxFull());
+        require(_primary[o] == ID, NotPrimary());
+        require(expiry[ID] > block.timestamp, Expired());
+        require(_inboxCount[o] < MAX_INBOX_COUNT, InboxFull());
 
         // Clear primary
-        delete _primaryName[o];
+        delete _primary[o];
 
         // Apply transfer penalty
         unchecked {
-            expiresAt[ID] -= TRANSFER_PENALTY;
+            expiry[ID] -= TRANSFER_PENALTY;
         }
 
-        // Compute inbox duration BEFORE incrementing count
-        uint64 ie = uint64(block.timestamp + _inboxDuration(_inboxCount[o]));
-        _inboxExpiry[ID] = ie;
+        // Increment count BEFORE calculating duration
+        uint8 count;
         unchecked {
-            ++_inboxCount[o];
+            count = ++_inboxCount[o];
             ++_totalInbox;
         }
+        uint64 ie;
+        if (count == 1) {
+            ie = uint64(block.timestamp + BASE_PENDING_PERIOD);
+        } else {
+            unchecked {
+                ie = uint64(block.timestamp + BASE_PENDING_PERIOD - (INBOX_DURATION_RANGE * (count - 1)) / (MAX_INBOX_COUNT - 1));
+            }
+        }
+        _inboxExpiry[ID] = ie;
         emit PrimaryUpdated(o, bytes4(0));
         emit InboxUpdated(o, ID, ie);
     }
@@ -120,28 +148,26 @@ abstract contract ProquintInbox is Core {
         uint64 ie = _inboxExpiry[ID];
         require(ie != 0, NotInInbox());
 
-        address receiver = _ownerOf[ID];
-        require(receiver == msg.sender, NotReceiver());
+        address _o = _ownerOf[ID];
+        require(_o == msg.sender, NotOwner());
         require(ie >= block.timestamp, InboxExpired());
 
-        uint256 refund = _refundAmount(ID);
-
-        // Clear inbox state
-        delete _inboxExpiry[ID];
+        // Inline refund calculation
+        uint256 refund;
         unchecked {
-            --_inboxCount[receiver];
-            --_totalInbox;
+            uint256 remainingMonths = (expiry[ID] - block.timestamp) / MONTH_DURATION;
+            refund = remainingMonths * PRICE_PER_MONTH;
         }
 
         _burn(ID);
-        emit InboxUpdated(receiver, ID, 0);
-        if (refund > 0) SafeTransferLib.safeTransferETH(receiver, refund);
+        if (refund > 0) SafeTransferLib.safeTransferETH(_o, refund);
     }
 
     /**
      * @notice Burn an inbox item that has passed both inbox expiry and ANYONE_PERIOD.
      * @dev Callable by anyone as a public good. Reward split:
      *      - If refund > PRICE_PER_MONTH and receiver exists: 50% burner, 50% receiver.
+     *      - If refund == 0: caller gets 1 month worth of fees as reward.
      *      - Otherwise: 100% to the caller (burner).
      * @param id Raw proquint ID (auto-normalized).
      */
@@ -150,31 +176,74 @@ abstract contract ProquintInbox is Core {
         uint64 ie = _inboxExpiry[ID];
         require(ie != 0 && block.timestamp > ie + ANYONE_PERIOD, InboxNotExpired());
 
-        uint256 totalRefund = _refundAmount(ID);
-
-        // Clear inbox state
-        delete _inboxExpiry[ID];
-        address receiver = _ownerOf[ID];
-        if (receiver != address(0)) {
+        // Inline refund calculation
+        uint256 totalRefund;
+        uint64 exp = expiry[ID];
+        if (exp > block.timestamp) {
             unchecked {
-                --_inboxCount[receiver];
-                --_totalInbox;
+                totalRefund = ((exp - block.timestamp) / MONTH_DURATION) * PRICE_PER_MONTH;
             }
         }
 
+        address receiver = _ownerOf[ID];
         _burn(ID);
-        emit InboxUpdated(receiver, ID, 0);
 
-        // Split: >1 month remaining (totalRefund > PRICE_PER_MONTH) → 50/50, else 100% burner
-        uint256 burnerReward;
-        if (totalRefund > 0) {
-            if (totalRefund > PRICE_PER_MONTH && receiver != address(0)) {
-                burnerReward = totalRefund / 2;
-                SafeTransferLib.safeTransferETH(receiver, burnerReward);
-            } else {
-                burnerReward = totalRefund;
+        // Reward logic
+        if (totalRefund > PRICE_PER_MONTH) {
+            // >1 month → split 50/50
+            uint256 half = totalRefund / 2;
+            SafeTransferLib.forceSafeTransferETH(receiver, half);
+            SafeTransferLib.safeTransferETH(msg.sender, half);
+        } else {
+            // ≤1 month → caller gets PRICE_PER_MONTH
+            SafeTransferLib.safeTransferETH(msg.sender, PRICE_PER_MONTH);
+        }
+    }
+
+    /**
+     * @notice Batch clean multiple inbox items in a single transaction.
+     * @dev Calls cleanInbox for each ID. Reverts if any single clean fails.
+     * @param input Packed bytes4 IDs (length must be multiple of 4).
+     */
+    function batchCleanInbox(bytes calldata input) external {
+        uint256 len = input.length;
+        require(len % 4 == 0, InvalidLength());
+        uint256 totalBurnerReward;
+        
+        for (uint256 i = 0; i < len;) {
+            bytes4 ID = LibProquint.normalize(bytes4(input[i:i+4]));
+            uint64 ie = _inboxExpiry[ID];
+            require(ie != 0 && block.timestamp > ie + ANYONE_PERIOD, InboxNotExpired());
+
+            // Inline refund calculation
+            uint256 totalRefund;
+            uint64 exp = expiry[ID];
+            if (exp > block.timestamp) {
+                unchecked {
+                    totalRefund = ((exp - block.timestamp) / MONTH_DURATION) * PRICE_PER_MONTH;
+                }
             }
-            SafeTransferLib.safeTransferETH(msg.sender, burnerReward);
+
+            address receiver = _ownerOf[ID];
+            _burn(ID);
+
+            // Accumulate rewards
+            if (totalRefund > PRICE_PER_MONTH) {
+                // >1 month → split 50/50
+                uint256 half = totalRefund / 2;
+                SafeTransferLib.forceSafeTransferETH(receiver, half);
+                unchecked { totalBurnerReward += half; }
+            } else {
+                // ≤1 month → caller gets PRICE_PER_MONTH
+                unchecked { totalBurnerReward += PRICE_PER_MONTH; }
+            }
+
+            unchecked { i += 4; }
+        }
+        
+        // Send accumulated reward once
+        if (totalBurnerReward > 0) {
+            SafeTransferLib.safeTransferETH(msg.sender, totalBurnerReward);
         }
     }
 }

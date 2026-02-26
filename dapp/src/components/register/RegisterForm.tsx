@@ -5,7 +5,7 @@ import { TransactionStatus } from './TransactionStatus'
 import { CommitmentWaiting } from './CommitmentWaiting'
 import { CONTRACTS } from '../../libs/contracts'
 import { PROQUINT_ABI } from '../../libs/abi/ERC721ABI'
-import { validateProquint, proquintToBytes4, calculatePrice, isPalindromic, bytes4ToProquint, generateRandomBytes, formatPrice } from '../../libs/proquint'
+import { validateProquint, proquintToBytes4, calculatePrice, isTwin, bytes4ToProquint, generateRandomBytes, formatPrice } from '../../libs/proquint'
 import { createCommitment, saveCommitment, checkCommitmentAge } from '../../libs/commitment'
 import { useAvailability } from '../../hooks/useAvailability'
 
@@ -33,17 +33,17 @@ export function RegisterForm() {
       return null
     }
   })()
-  const normalizedProquint = normalizedId ? bytes4ToProquint(normalizedId) : null
+  const normalizedProquint = normalizedId ? bytes4ToProquint(normalizedId).toUpperCase() : null
 
   const { availability } = useAvailability(proquint)
   const { writeContract, data: hash, isPending, error: writeError, reset } = useWriteContract()
   const { isLoading: isConfirming, isSuccess, error: txError } = useWaitForTransactionReceipt({ hash })
 
-  // Calculate price in wei based on years and palindromic status
+  // Calculate price in wei based on years and twin status
   const price = useMemo(() => {
     if (!proquint || !validateProquint(proquint)) return 0n
     const proquintId = proquintToBytes4(proquint)
-    const isPalin = isPalindromic(proquintId)
+    const isPalin = isTwin(proquintId)
     return calculatePrice(years, isPalin)
   }, [proquint, years])
 
@@ -289,7 +289,9 @@ export function RegisterForm() {
           normalizedId={normalizedId}
           price={price}
           years={years}
-          receiverAddress={resolvedReceiver || address}
+          receiverAddress={resolvedReceiver && resolvedReceiver !== address ? resolvedReceiver : undefined}
+          receiverInput={receiver}
+          userAddress={address}
           onCancel={() => { setStep('setup'); setCommitmentData(null); }}
         />
       )}
@@ -304,7 +306,9 @@ export function RegisterForm() {
           canRegister={canRegister}
           isPending={isPending}
           commitTxHash={commitTxHash}
-          receiverAddress={resolvedReceiver || address}
+          receiverAddress={resolvedReceiver && resolvedReceiver !== address ? resolvedReceiver : undefined}
+          receiverInput={receiver}
+          userAddress={address}
           onRegister={handleRegister}
           onCancel={() => { setStep('setup'); setCommitmentData(null); setCommitTxConfirmed(false); setCommitTxHash(null); }}
         />
@@ -319,7 +323,9 @@ export function RegisterForm() {
           normalizedId={normalizedId}
           price={price}
           years={years}
-          receiverAddress={resolvedReceiver || address}
+          receiverAddress={resolvedReceiver && resolvedReceiver !== address ? resolvedReceiver : undefined}
+          receiverInput={receiver}
+          userAddress={address}
           onCancel={() => { setStep('setup'); setCommitmentData(null); setCommitTxConfirmed(false); }}
         />
       )}

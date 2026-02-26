@@ -8,6 +8,10 @@ import { CONTRACTS } from '../../libs/contracts'
 import { PROQUINT_ABI } from '../../libs/abi/ERC721ABI'
 import { ProfileSearchBar } from './ProfileSearchBar'
 import { Identicon } from '../utils/Identicon'
+import { useInboxItems } from '../../hooks/useInboxItems'
+import { ExpiryDisplay } from '../utils/ExpiryDisplay'
+import { InboxItemCard } from '../utils/InboxItemCard'
+import { proquintNameStyle, addressStyle } from '../utils/styles'
 import { bytes4ToProquint } from '../../libs/proquint'
 
 const ZERO_ID = '0x00000000'
@@ -77,9 +81,19 @@ export function ProfileAddress() {
   })
 
   const hasPrimary = !!(primaryId && primaryId !== ZERO_ID)
-  const primaryProquint = hasPrimary ? bytes4ToProquint(primaryId as `0x${string}`) : null
+  const primaryProquint = hasPrimary ? bytes4ToProquint(primaryId as `0x${string}`).toUpperCase() : null
   const inboxCount = inboxCountData ? Number(inboxCountData) : 0
   const isOwner = targetAddress === connectedAddress
+  const { items: inboxItems, loading: inboxLoading } = useInboxItems(targetAddress || undefined)
+
+  // Get primary name expiry
+  const { data: primaryExpiry } = useReadContract({
+    address: CONTRACTS.ProquintNFT,
+    abi: PROQUINT_ABI,
+    functionName: 'getExpiry',
+    args: hasPrimary ? [primaryId as `0x${string}`] : undefined,
+    query: { enabled: hasPrimary },
+  })
 
   if (isResolving) {
     return (
@@ -135,43 +149,96 @@ export function ProfileAddress() {
         )}
 
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-          <Identicon address={targetAddress} proquintId={hasPrimary ? (primaryId as `0x${string}`) : undefined} size={120} />
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ 
-              fontFamily: "'SF Mono', 'Monaco', monospace", 
-              fontSize: '0.9rem', 
-              color: 'var(--text-dim)',
-              marginBottom: '0.25rem'
-            }}>
-              {targetAddress}
+          <Identicon address={targetAddress} proquintId={hasPrimary ? (primaryId as `0x${string}`) : undefined} size={160} />
+          {primaryProquint && (
+            <div
+              onClick={() => navigate(`/${primaryProquint.toLowerCase()}`)}
+              style={{
+                ...proquintNameStyle,
+                cursor: 'pointer',
+                lineHeight: 1.1,
+              }}
+            >
+              {primaryProquint}
             </div>
+          )}
+          <div style={addressStyle}>
+            {targetAddress}
           </div>
         </div>
 
         <div className="info-grid">
           <div className="info-item">
-            <div className="info-label">Primary Name</div>
+            <div className="info-label">Primary</div>
             <div className="info-value">{primaryProquint ? primaryProquint.toUpperCase() : 'None'}</div>
           </div>
           <div className="info-item">
-            <div className="info-label">Inbox Count</div>
+            <div className="info-label">Inbox</div>
             <div className="info-value">{inboxCount}</div>
           </div>
         </div>
 
-        {!hasPrimary && inboxCount === 0 && (
+        {/* Primary Name Expiry */}
+        {hasPrimary && primaryId && (
+          <div style={{ marginTop: '1rem' }}>
+            <ExpiryDisplay expiryTimestamp={primaryExpiry} showGracePeriod={true} compact={true} />
+          </div>
+        )}
+      </div>
+
+      {/* Inbox Items */}
+      {inboxCount > 0 && (
+        <div className="card">
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem' }}>
+            Inbox Items
+            {inboxLoading && <span style={{ fontSize: '0.8rem', color: 'var(--text-dim)', fontWeight: 400, marginLeft: '0.5rem' }}>loading...</span>}
+          </h3>
+
+          {inboxItems.length === 0 && !inboxLoading && (
+            <div style={{ 
+              textAlign: 'center', 
+              padding: '2rem', 
+              color: 'var(--text-dim)',
+              backgroundColor: 'var(--bg-secondary)',
+              borderRadius: '6px',
+            }}>
+              No inbox items found
+            </div>
+          )}
+
+          {inboxItems.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {inboxItems.map((item) => {
+                const now = Math.floor(Date.now() / 1000)
+                const inboxExp = Number(item.inboxExpiry)
+                const isExpired = inboxExp < now
+                return (
+                  <InboxItemCard
+                    key={item.id}
+                    proquint={item.proquint}
+                    isExpired={isExpired}
+                    onClick={() => navigate(`/${item.proquint.toLowerCase()}`)}
+                  />
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {!hasPrimary && inboxCount === 0 && (
+        <div className="card">
           <div style={{ 
             textAlign: 'center', 
             padding: '2rem', 
             color: 'var(--text-dim)',
             backgroundColor: 'var(--bg-secondary)',
-            borderRadius: '8px',
-            marginTop: '1.5rem'
+            borderRadius: '6px',
           }}>
             No proquint names registered
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

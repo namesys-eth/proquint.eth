@@ -6,6 +6,7 @@ import { TransferModal } from '../modal/TransferModal'
 import { RefundModal } from '../modal/RefundModal'
 import { ShelveModal } from '../modal/ShelveModal'
 import { bytes4ToProquint } from '../../libs/proquint'
+import { monoStyle } from '../utils/styles'
 
 interface InboxStatusSectionProps {
   nameId: `0x${string}`
@@ -62,31 +63,32 @@ export function InboxStatusSection({
   const { isSuccess } = useWaitForTransactionReceipt({ hash })
 
   const anyoneEnd = inboxExpiryTs + CONSTANTS.ANYONE_PERIOD
-  const proquintName = bytes4ToProquint(nameId)
+  const proquintName = bytes4ToProquint(nameId).toUpperCase()
 
   // Countdowns
   const receiverCountdown = useCountdown(inboxExpiryTs)
   const anyoneCountdown = useCountdown(anyoneEnd)
 
   const handleClaim = () => {
+    // Use acceptInbox if owner, acceptInboxOnBehalf if claiming on behalf
+    const functionName = isInboxOwner ? 'acceptInbox' : 'acceptInboxOnBehalf'
     writeContract({
       address: CONTRACTS.ProquintNFT,
       abi: PROQUINT_ABI,
-      functionName: 'acceptInbox',
+      functionName,
       args: [nameId],
     })
   }
 
   // Mirrors contract _refundAmount exactly:
-  //   remainingMonths = (expiresAt[ID] - block.timestamp) / 30 days
-  //   refund = remainingMonths * PRICE_PER_MONTH (0.00002 ETH)
+  //   remainingMonths = (expiry[ID] - block.timestamp) / 30 days
+  //   refund = remainingMonths * PRICE_PER_MONTH (0.00003 ETH)
   const calculateRefundReward = () => {
-    const PRICE_PER_MONTH_ETH = Number(CONSTANTS.PRICE_PER_MONTH) / 1e18 // 0.00002
-    const SECONDS_PER_MONTH = 30 * 24 * 60 * 60 // 30 days
+    const PRICE_PER_MONTH_ETH = Number(CONSTANTS.PRICE_PER_MONTH) / 1e18 // 0.00003
     const now = Math.floor(Date.now() / 1000)
     const expiry = expiryTimestamp ? Number(expiryTimestamp) : now
 
-    const remainingMonths = expiry > now ? Math.floor((expiry - now) / SECONDS_PER_MONTH) : 0
+    const remainingMonths = expiry > now ? Math.floor((expiry - now) / CONSTANTS.MONTH_DURATION) : 0
     const totalRefund = remainingMonths * PRICE_PER_MONTH_ETH
 
     if (isInboxOwner) {
@@ -94,7 +96,7 @@ export function InboxStatusSection({
       return {
         amount: totalRefund,
         remainingMonths,
-        description: `${remainingMonths} mo × 0.00002 ETH`,
+        description: `${remainingMonths} mo × 0.00003 ETH`,
       }
     } else {
       // cleanInbox: if totalRefund > PRICE_PER_MONTH && receiver exists → 50/50, else 100% burner
@@ -104,8 +106,8 @@ export function InboxStatusSection({
         amount: burnerReward,
         remainingMonths,
         description: split
-          ? `50% of ${remainingMonths} mo × 0.00002 ETH`
-          : `${remainingMonths} mo × 0.00002 ETH (100% to burner)`,
+          ? `50% of ${remainingMonths} mo × 0.00003 ETH`
+          : `${remainingMonths} mo × 0.00003 ETH (100% to burner)`,
       }
     }
   }
@@ -117,7 +119,6 @@ export function InboxStatusSection({
   // Others can claim on behalf only if owner has no primary AND anyone period active
   const othersCanClaim = !isInboxOwner && !ownerHasPrimary && canClaimOnBehalf
 
-  const mono = { fontFamily: "'SF Mono', 'Monaco', monospace" } as const
   const cardBg: React.CSSProperties = {
     padding: '0.75rem', background: 'var(--bg)',
     border: '1px solid var(--border)', borderRadius: '6px',
@@ -132,25 +133,24 @@ export function InboxStatusSection({
           padding: '0.6rem 0.75rem', marginBottom: '0.75rem',
           backgroundColor: 'color-mix(in srgb, var(--warning) 10%, transparent)',
           border: '1px solid color-mix(in srgb, var(--warning) 30%, transparent)',
-          borderRadius: '6px', fontSize: '0.8rem', color: 'var(--text)', lineHeight: 1.5,
+          borderRadius: '6px', fontSize: '0.85rem', color: 'var(--text)', lineHeight: 1.5,
         }}>
-          <strong style={{ color: 'var(--warning)' }}>Action Required</strong>
-          <span style={{ color: 'var(--text-dim)', marginLeft: '0.4rem' }}>
+          <strong style={{ color: 'var(--warning)' }}>Action Required — </strong>
+          <span style={{ color: 'var(--text-dim)' }}>
             {ownerHasPrimary
-              ? 'Shelve your current primary to claim this, or transfer/refund it.'
-              : 'Claim this name as your primary before it expires.'}
+              ? 'Shelve your primary first, then claim this name.'
+              : 'Claim this as your primary.'}
           </span>
         </div>
       )}
 
       {/* Timeline cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.5rem', marginBottom: '1rem' }}>
-        {/* Receiver claim period */}
         <div style={{ ...cardBg, borderColor: canClaim ? 'color-mix(in srgb, var(--success) 40%, var(--border))' : 'var(--border)' }}>
           <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.35rem' }}>
             Owner Claim
           </div>
-          <div style={{ ...mono, fontSize: '1rem', fontWeight: 700, color: canClaim ? 'var(--success)' : 'var(--text-dim)', marginBottom: '0.2rem' }}>
+          <div style={{ ...monoStyle, fontSize: '1.1rem', fontWeight: 700, color: canClaim ? 'var(--success)' : 'var(--text-dim)', marginBottom: '0.2rem' }}>
             {receiverCountdown}
           </div>
           <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>
@@ -158,12 +158,11 @@ export function InboxStatusSection({
           </div>
         </div>
 
-        {/* Anyone claim period */}
         <div style={{ ...cardBg, borderColor: canClaimOnBehalf ? 'color-mix(in srgb, var(--warning) 40%, var(--border))' : 'var(--border)' }}>
           <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.35rem' }}>
             Open Claim
           </div>
-          <div style={{ ...mono, fontSize: '1rem', fontWeight: 700, color: canClaimOnBehalf ? 'var(--warning)' : 'var(--text-dim)', marginBottom: '0.2rem' }}>
+          <div style={{ ...monoStyle, fontSize: '1.1rem', fontWeight: 700, color: canClaimOnBehalf ? 'var(--warning)' : 'var(--text-dim)', marginBottom: '0.2rem' }}>
             {canClaim ? 'Waiting' : anyoneCountdown}
           </div>
           <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>
@@ -171,36 +170,17 @@ export function InboxStatusSection({
           </div>
         </div>
 
-        {/* Burn period */}
         <div style={{ ...cardBg, borderColor: canBurn ? 'color-mix(in srgb, var(--danger) 40%, var(--border))' : 'var(--border)' }}>
           <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.35rem' }}>
             Burnable
           </div>
-          <div style={{ ...mono, fontSize: '1rem', fontWeight: 700, color: canBurn ? 'var(--danger)' : 'var(--text-dim)', marginBottom: '0.2rem' }}>
+          <div style={{ ...monoStyle, fontSize: '1.1rem', fontWeight: 700, color: canBurn ? 'var(--danger)' : 'var(--text-dim)', marginBottom: '0.2rem' }}>
             {canBurn ? 'Now' : 'Waiting'}
           </div>
           <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>
             {formatDate(anyoneEnd)}
           </div>
         </div>
-      </div>
-
-      {/* Period descriptions */}
-      <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)', lineHeight: 1.6, marginBottom: '1rem', padding: '0 0.25rem' }}>
-        {canClaim && isInboxOwner && (
-          ownerHasPrimary
-            ? <span>You already have a primary. <strong style={{ color: 'var(--text)' }}>Shelve</strong> it first, then claim this name.</span>
-            : <span><strong style={{ color: 'var(--success)' }}>Owner claim active.</strong> Claim this as your primary now.</span>
-        )}
-        {canClaim && !isInboxOwner && (
-          <span>Only the owner can claim during this period.</span>
-        )}
-        {canClaimOnBehalf && (
-          <span><strong style={{ color: 'var(--warning)' }}>Open claim period.</strong> Anyone without a primary can claim on behalf of the owner — the owner receives it as their primary.</span>
-        )}
-        {canBurn && (
-          <span><strong style={{ color: 'var(--danger)' }}>Burn period.</strong> Owner can refund anytime. Others can burn for a split reward.</span>
-        )}
       </div>
 
       {/* Actions */}
@@ -234,36 +214,16 @@ export function InboxStatusSection({
             >
               Transfer
             </button>
-            <button
-              onClick={() => setShowBurnModal(true)}
-              disabled={isPending}
-              className="secondary"
-              style={{ flex: '1 1 auto' }}
-              title="Reject inbox item and receive refund based on remaining time"
-            >
-              Refund
-            </button>
           </>
         ) : (
-          <>
-            <button
-              onClick={handleClaim}
-              disabled={!othersCanClaim || isPending}
-              style={{ flex: '1 1 auto' }}
-              title={ownerHasPrimary ? 'Owner has a primary — cannot accept' : !canClaimOnBehalf ? '7d open claim not active yet' : 'Accept on behalf — owner gets this as primary'}
-            >
-              {isPending ? 'Processing…' : 'Claim On Behalf'}
-            </button>
-            <button
-              onClick={() => setShowBurnModal(true)}
-              disabled={!canBurn || isPending}
-              className="secondary"
-              style={{ flex: '1 1 auto' }}
-              title={!canBurn ? 'Burnable after open claim ends' : 'Burn for split reward'}
-            >
-              {isPending ? 'Processing…' : 'Burn'}
-            </button>
-          </>
+          <button
+            onClick={handleClaim}
+            disabled={!othersCanClaim || isPending}
+            style={{ flex: '1 1 auto' }}
+            title={ownerHasPrimary ? 'Owner has a primary — cannot accept' : !canClaimOnBehalf ? '7d open claim not active yet' : 'Accept on behalf — owner gets this as primary'}
+          >
+            {isPending ? 'Processing…' : 'Claim On Behalf'}
+          </button>
         )}
       </div>
 
@@ -278,13 +238,25 @@ export function InboxStatusSection({
         </div>
       )}
 
-      <RefundModal
-        open={showBurnModal}
-        onClose={() => setShowBurnModal(false)}
-        nameId={nameId}
-        isInboxOwner={isInboxOwner}
-        refundReward={refundReward}
-      />
+      {isInboxOwner ? (
+        <RefundModal
+          open={showBurnModal}
+          onClose={() => setShowBurnModal(false)}
+          nameId={nameId}
+          proquintName={proquintName}
+          rewardAmount={refundReward.amount}
+          remainingMonths={refundReward.remainingMonths}
+        />
+      ) : (
+        <RefundModal
+          open={showBurnModal}
+          onClose={() => setShowBurnModal(false)}
+          nameId={nameId}
+          proquintName={proquintName}
+          rewardAmount={refundReward.amount}
+          remainingMonths={refundReward.remainingMonths}
+        />
+      )}
 
       <TransferModal
         open={isTransferModalOpen}
@@ -303,7 +275,7 @@ export function InboxStatusSection({
           open={showShelveModal}
           onClose={() => setShowShelveModal(false)}
           nameId={ownerPrimaryId as `0x${string}`}
-          proquintName={bytes4ToProquint(ownerPrimaryId as `0x${string}`)}
+          proquintName={bytes4ToProquint(ownerPrimaryId as `0x${string}`).toUpperCase()}
         />
       )}
     </div>

@@ -12,6 +12,7 @@ export interface CachedEvent {
   blockNumber: number
   transactionHash: string
   logIndex: number
+  timestamp: number
   args: Record<string, string | number>
 }
 
@@ -69,13 +70,15 @@ export function clearCache(address: string, chainId: number): void {
 }
 
 /**
- * Deduplicate events by (transactionHash, logIndex).
+ * Deduplicate events by (transactionHash, logIndex, type).
  * Keeps the latest version of each event.
+ * Note: Same tx can have multiple events of different types at different logIndexes.
  */
 export function deduplicateEvents(events: CachedEvent[]): CachedEvent[] {
   const map = new Map<string, CachedEvent>()
   for (const e of events) {
-    map.set(`${e.transactionHash}_${e.logIndex}`, e)
+    // Use tx hash + log index + type as key to allow multiple event types in same tx
+    map.set(`${e.transactionHash}_${e.logIndex}_${e.type}`, e)
   }
   return [...map.values()].sort((a, b) => a.blockNumber - b.blockNumber || a.logIndex - b.logIndex)
 }

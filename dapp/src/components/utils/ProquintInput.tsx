@@ -111,20 +111,25 @@ export function ProquintInput({ value, onChange, showRandom = true, showBytes4 =
       </div>
 
       {showBytes4 && (
-        <input
-          id="hex-input"
-          type="text"
-          value={hexInput}
-          onChange={(e) => handleHexChange(e.target.value)}
-          placeholder="0x00000000"
-          maxLength={10}
-          style={{
-            fontFamily: "'SF Mono', 'Monaco', monospace",
-            fontSize: '0.9rem',
-            padding: '0.6rem 0.75rem',
-            color: 'var(--text-dim)'
-          }}
-        />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+          <label htmlFor="hex-input" style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-dim)' }}>
+            Hex ID:
+          </label>
+          <input
+            id="hex-input"
+            type="text"
+            value={hexInput}
+            onChange={(e) => handleHexChange(e.target.value)}
+            placeholder="0x00000000"
+            maxLength={10}
+            style={{
+              fontFamily: "'SF Mono', 'Monaco', monospace",
+              fontSize: '0.9rem',
+              padding: '0.6rem 0.75rem',
+              color: 'var(--text-dim)'
+            }}
+          />
+        </div>
       )}
     </div>
   )

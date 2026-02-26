@@ -1,6 +1,7 @@
 import { AddressInput } from '../utils/AddressInput'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { monoStyle } from '../utils/styles'
 
 interface ProfileSearchBarProps {
   initial?: string
@@ -54,7 +55,7 @@ export function ProfileSearchBar({ initial = '' }: ProfileSearchBarProps) {
           marginTop: '0.75rem',
           fontSize: '0.9rem',
           color: 'var(--primary)',
-          fontFamily: "'SF Mono', 'Monaco', monospace"
+          ...monoStyle
         }}>
           ✓ Resolved to: {resolved.slice(0, 6)}...{resolved.slice(-4)}
         </div>

@@ -17,7 +17,7 @@ export function ConnectButton() {
   })
 
   const proquintName = primaryId && primaryId !== '0x00000000'
-    ? bytes4ToProquint(primaryId as `0x${string}`)
+    ? bytes4ToProquint(primaryId as `0x${string}`).toUpperCase()
     : null
 
   return (

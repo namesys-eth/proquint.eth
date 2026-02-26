@@ -1,6 +1,8 @@
 import { formatPrice } from '../../libs/proquint'
-import { explorerTxUrl } from '../../libs/config'
-import { Identicon } from '../utils/Identicon'
+import { explorerTxUrl, explorerAddressUrl } from '../../libs/config'
+import { StepIndicator } from '../utils/StepIndicator'
+import { IdenticonWithName } from '../utils/IdenticonWithName'
+import { monoStyle } from '../utils/styles'
 
 interface CommitmentWaitingProps {
   proquint: string
@@ -12,6 +14,8 @@ interface CommitmentWaitingProps {
   isPending: boolean
   commitTxHash: string | null
   receiverAddress?: string
+  receiverInput?: string
+  userAddress?: string
   onRegister: () => void
   onCancel: () => void
 }
@@ -26,86 +30,142 @@ export function CommitmentWaiting({
   isPending,
   commitTxHash,
   receiverAddress,
+  receiverInput,
+  userAddress,
   onRegister,
   onCancel,
 }: CommitmentWaitingProps) {
-  const mono = { fontFamily: "'SF Mono', 'Monaco', monospace" } as const
+  // Only show receiver if it's actually a different address (minting to another)
+  const showReceiver = receiverAddress && receiverAddress !== ''
+  const displayReceiver = receiverInput || receiverAddress
+  const identiconAddress = userAddress || '0x0000000000000000000000000000000000000000'
+
+  // Step states: commit is always completed at this stage, register is active when ready
+  const steps = [
+    { id: 'commit', label: 'Committed', state: 'completed' as const },
+    { 
+      id: 'register', 
+      label: 'Register', 
+      state: canRegister ? 'active' : 'pending' as const
+    },
+  ]
 
   return (
     <div className="card">
-      {/* Step indicator — between commit and register */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem', marginBottom: '1.25rem', padding: '0.5rem', backgroundColor: 'var(--bg)', borderRadius: '6px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', opacity: 0.4 }}>
-          <div style={{ width: '22px', height: '22px', borderRadius: '50%', backgroundColor: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--bg)', fontSize: '0.7rem', fontWeight: 700 }}>✓</div>
-          <span style={{ fontSize: '0.8rem' }}>Commit</span>
-        </div>
-        <div style={{ width: '32px', height: '2px', backgroundColor: 'var(--border)', alignSelf: 'center' }} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <div style={{ width: '22px', height: '22px', borderRadius: '50%', backgroundColor: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--bg)', fontSize: '0.7rem', fontWeight: 700 }}>2</div>
-          <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Register</span>
-        </div>
+      {/* Step indicator */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <StepIndicator steps={steps} />
       </div>
 
-      {/* Name centerpiece */}
-      <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-        <div style={{
-          ...mono,
-          fontSize: 'clamp(1.5rem, 5vw, 2.2rem)',
-          fontWeight: 800,
-          color: 'var(--accent)',
-          textTransform: 'uppercase',
-          letterSpacing: '-0.01em',
-          lineHeight: 1.1,
-          marginBottom: '0.15rem',
-        }}>
-          {proquint}
-        </div>
-        {normalizedId && (
-          <div style={{ ...mono, fontSize: '0.78rem', color: 'var(--text-dim)' }}>{normalizedId}</div>
-        )}
+      {/* Identicon with proquint overlay */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+        <IdenticonWithName
+          address={identiconAddress}
+          proquintId={normalizedId as `0x${string}` | undefined}
+          proquint={proquint}
+          size={200}
+        />
       </div>
 
-      {/* Identicon + details */}
-      {receiverAddress && (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-          <Identicon address={receiverAddress} size={100} />
-          <div style={{ display: 'flex', gap: '1rem', fontSize: '0.78rem', color: 'var(--text-dim)' }}>
-            <span>{years} {years === 1 ? 'yr' : 'yrs'}</span>
-            <span>{formatPrice(price)} ETH</span>
-          </div>
+      {/* Hex ID display */}
+      {normalizedId && (
+        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-dim)', fontWeight: 500 }}>Hex ID: </span>
+          <span style={{ ...monoStyle, fontSize: '0.9rem', color: 'var(--text)', fontWeight: 600 }}>
+            {normalizedId.toUpperCase()}
+          </span>
         </div>
       )}
 
-      {/* Countdown / Ready */}
-      <div style={{ textAlign: 'center', padding: '1rem 0.5rem', backgroundColor: 'var(--bg)', borderRadius: '6px', marginBottom: '1rem' }}>
+      {/* Registration details */}
+      {showReceiver && (
+        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '0.75rem', fontWeight: 500 }}>
+            Recipient
+          </div>
+          <Identicon address={receiverAddress!} size={80} />
+          <div style={{ 
+            ...monoStyle, 
+            fontSize: '0.85rem', 
+            color: 'var(--text)', 
+            marginTop: '0.5rem',
+            fontWeight: 600
+          }}>
+            {displayReceiver}
+          </div>
+          {explorerAddressUrl(receiverAddress!) && (
+            <a 
+              href={explorerAddressUrl(receiverAddress!)} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              style={{ 
+                fontSize: '0.75rem', 
+                color: 'var(--accent)', 
+                textDecoration: 'none',
+                marginTop: '0.25rem',
+                display: 'inline-block'
+              }}
+            >
+              View on Explorer ↗
+            </a>
+          )}
+        </div>
+      )}
+
+      {/* Info grid - Duration and Cost inline */}
+      <div className="info-grid" style={{ marginBottom: '1.5rem' }}>
+        <div className="info-item">
+          <div className="info-label">Duration</div>
+          <div className="info-value">{years} {years === 1 ? 'yr' : 'yrs'}</div>
+        </div>
+        <div className="info-item">
+          <div className="info-label">Cost</div>
+          <div className="info-value">{formatPrice(price)} ETH</div>
+        </div>
+      </div>
+
+      {/* Countdown / Ready status */}
+      <div style={{ 
+        textAlign: 'center', 
+        padding: '1.5rem 1rem', 
+        marginBottom: '1.5rem',
+        borderTop: '1px solid var(--border)',
+        borderBottom: '1px solid var(--border)'
+      }}>
         {timeLeft > 0 ? (
           <>
-            <div style={{ ...mono, fontSize: '2.5rem', fontWeight: 800, color: 'var(--accent)' }}>{timeLeft}s</div>
-            <div style={{ color: 'var(--text-dim)', fontSize: '0.8rem', marginTop: '0.25rem' }}>Waiting to register…</div>
+            <div style={{ 
+              ...monoStyle, 
+              fontSize: 'clamp(2.5rem, 8vw, 3.5rem)', 
+              fontWeight: 800, 
+              color: 'var(--accent)',
+              lineHeight: 1
+            }}>{timeLeft}s</div>
+            <div style={{ color: 'var(--text-dim)', fontSize: '0.9rem', marginTop: '0.5rem' }}>Waiting to register...</div>
           </>
         ) : (
           <>
-            <div style={{ fontSize: '2rem', marginBottom: '0.4rem' }}>✅</div>
-            <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--success)' }}>Ready to Register</div>
+            <div style={{ fontSize: '2.5rem', marginBottom: '0.4rem', lineHeight: 1 }}>✅</div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--success)' }}>Ready to Register!</div>
           </>
         )}
       </div>
 
       <div className="actions" style={{ justifyContent: 'center' }}>
-        <button className="secondary" onClick={onCancel}>Cancel</button>
-        <button onClick={onRegister} disabled={!canRegister || isPending}>
+        <button className="secondary" onClick={onCancel} style={{ fontSize: '1rem' }}>Cancel</button>
+        <button onClick={onRegister} disabled={!canRegister || isPending} style={{ fontSize: '1.05rem', padding: '0.9rem 1.5rem' }}>
           {isPending ? 'Registering…' : 'Register Now'}
         </button>
       </div>
 
       {commitTxHash && (
-        <div style={{ marginTop: '1rem', padding: '0.6rem 0.75rem', backgroundColor: 'var(--bg)', borderRadius: '6px', fontSize: '0.78rem' }}>
+        <div style={{ marginTop: '1.5rem', padding: '0.75rem 1rem', fontSize: '0.85rem', opacity: 0.7 }}>
           <span style={{ color: 'var(--text-dim)' }}>Commit tx: </span>
           <a
             href={explorerTxUrl(commitTxHash)}
             target="_blank"
             rel="noopener noreferrer"
-            style={{ ...mono, color: 'var(--accent)', wordBreak: 'break-all' }}
+            style={{ ...monoStyle, color: 'var(--accent)', wordBreak: 'break-all' }}
           >
             {commitTxHash}
           </a>

@@ -11,8 +11,8 @@ export function ProfileRouter() {
     return <ProfileDefault />
   }
 
-  // Check if it's a proquint format (xxxxx-xxxxx)
-  const isProquint = param.match(/^[a-z]{5}-[a-z]{5}$/)
+  // Check if it's a proquint format (xxxxx-xxxxx) - case insensitive
+  const isProquint = param.match(/^[a-zA-Z]{5}-[a-zA-Z]{5}$/)
   
   if (isProquint) {
     return <ProfileInbox />

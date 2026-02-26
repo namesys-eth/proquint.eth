@@ -1,5 +1,9 @@
 import { formatPrice } from '../../libs/proquint'
-import { Identicon } from '../utils/Identicon'
+import { explorerAddressUrl } from '../../libs/config'
+import { StepIndicator } from '../utils/StepIndicator'
+import { IdenticonWithName } from '../utils/IdenticonWithName'
+import { Confetti } from '../utils/Confetti'
+import { monoStyle } from '../utils/styles'
 
 interface TransactionStatusProps {
   step: 'commit' | 'register'
@@ -10,6 +14,8 @@ interface TransactionStatusProps {
   price?: bigint
   years?: number
   receiverAddress?: string
+  receiverInput?: string
+  userAddress?: string
   onCancel?: () => void
 }
 
@@ -22,82 +28,151 @@ export function TransactionStatus({
   price,
   years,
   receiverAddress,
+  receiverInput,
+  userAddress,
   onCancel,
 }: TransactionStatusProps) {
-  const mono = { fontFamily: "'SF Mono', 'Monaco', monospace" } as const
+  const showReceiver = receiverAddress && receiverAddress !== ''
+  const displayReceiver = receiverInput || receiverAddress
+  const identiconAddress = userAddress || '0x0000000000000000000000000000000000000000'
 
-  const StepDot = ({ n, active }: { n: number; active: boolean }) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', opacity: active ? 1 : 0.4 }}>
-      <div style={{ width: '22px', height: '22px', borderRadius: '50%', backgroundColor: active ? 'var(--primary)' : 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--bg)', fontSize: '0.7rem', fontWeight: 700 }}>{n}</div>
-      <span style={{ fontSize: '0.8rem', fontWeight: active ? 600 : 400 }}>{n === 1 ? 'Commit' : 'Register'}</span>
-    </div>
-  )
-
+  // Step indicator logic:
+  // - In 'commit' step: commit is "active" while confirming, "completed" after success
+  // - In 'register' step: commit is "completed", register is "active" while confirming, "completed" after success
+  const steps = [
+    { 
+      id: 'commit', 
+      label: 'Committed', 
+      state: (step === 'commit' && !isSuccess) ? 'active' : 'completed' as const 
+    },
+    { 
+      id: 'register', 
+      label: 'Register', 
+      state: step === 'register' ? (isSuccess ? 'completed' : 'active') : 'pending' as const
+    },
+  ]
   return (
     <div className="card">
       {/* Step indicator */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem', marginBottom: '1.25rem', padding: '0.5rem', backgroundColor: 'var(--bg)', borderRadius: '6px' }}>
-        <StepDot n={1} active={step === 'commit'} />
-        <div style={{ width: '32px', height: '2px', backgroundColor: 'var(--border)', alignSelf: 'center' }} />
-        <StepDot n={2} active={step === 'register'} />
+      <div style={{ marginBottom: '1.5rem' }}>
+        <StepIndicator steps={steps} />
       </div>
 
-      {/* Name centerpiece */}
+      {/* Identicon with proquint overlay */}
       {proquint && (
-        <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-          <div style={{
-            ...mono,
-            fontSize: 'clamp(1.5rem, 5vw, 2.2rem)',
-            fontWeight: 800,
-            color: 'var(--accent)',
-            textTransform: 'uppercase',
-            letterSpacing: '-0.01em',
-            lineHeight: 1.1,
-            marginBottom: '0.15rem',
-          }}>
-            {proquint}
+        <>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+            <IdenticonWithName 
+              address={identiconAddress} 
+              proquintId={normalizedId as `0x${string}` | undefined}
+              proquint={proquint}
+              size={200}
+            />
           </div>
+
+          {/* Hex ID display */}
           {normalizedId && (
-            <div style={{ ...mono, fontSize: '0.78rem', color: 'var(--text-dim)' }}>{normalizedId}</div>
+            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-dim)', fontWeight: 500 }}>Hex ID: </span>
+              <span style={{ ...monoStyle, fontSize: '0.9rem', color: 'var(--text)', fontWeight: 600 }}>
+                {normalizedId.toUpperCase()}
+              </span>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Registration details */}
+      {showReceiver && (
+        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '0.75rem', fontWeight: 500 }}>
+            Recipient
+          </div>
+          <Identicon address={receiverAddress!} size={80} />
+          <div style={{ 
+            ...monoStyle, 
+            fontSize: '0.85rem', 
+            color: 'var(--text)', 
+            marginTop: '0.5rem',
+            fontWeight: 600
+          }}>
+            {displayReceiver}
+          </div>
+          {explorerAddressUrl(receiverAddress!) && (
+            <a 
+              href={explorerAddressUrl(receiverAddress!)} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              style={{ 
+                fontSize: '0.75rem', 
+                color: 'var(--accent)', 
+                textDecoration: 'none',
+                marginTop: '0.25rem',
+                display: 'inline-block'
+              }}
+            >
+              View on Explorer ↗
+            </a>
           )}
         </div>
       )}
 
-      {/* Identicon + details */}
-      {receiverAddress && (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-          <Identicon address={receiverAddress} size={100} />
-          {price && years && (
-            <div style={{ display: 'flex', gap: '1rem', fontSize: '0.78rem', color: 'var(--text-dim)' }}>
-              <span>{years} {years === 1 ? 'yr' : 'yrs'}</span>
-              <span>{formatPrice(price)} ETH</span>
+      {/* Info grid - Duration and Cost inline */}
+      {(price || years) && (
+        <div className="info-grid" style={{ marginBottom: '1.5rem' }}>
+          {years && (
+            <div className="info-item">
+              <div className="info-label">Duration</div>
+              <div className="info-value">{years} {years === 1 ? 'yr' : 'yrs'}</div>
+            </div>
+          )}
+          {price && (
+            <div className="info-item">
+              <div className="info-label">Cost</div>
+              <div className="info-value">{formatPrice(price)} ETH</div>
             </div>
           )}
         </div>
       )}
 
       {/* Status message */}
-      <div style={{ textAlign: 'center', padding: '1rem 0.5rem', backgroundColor: 'var(--bg)', borderRadius: '6px', marginBottom: '1rem' }}>
-        {step === 'commit' && (
+      <div style={{ textAlign: 'center', padding: '1.5rem 1rem', marginBottom: '1.5rem', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
+        {isSuccess ? (
           <>
-            <div style={{ fontSize: '2rem', marginBottom: '0.4rem' }}>⏳</div>
-            <div style={{ fontSize: '0.95rem', fontWeight: 600 }}>
+            <Confetti />
+            <div style={{ fontSize: '4rem', marginBottom: '1rem', animation: 'bounce 0.6s ease-in-out' }}>🎉</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--success)', marginBottom: '0.5rem' }}>
+              Registration Complete!
+            </div>
+            <div style={{ color: 'var(--text-dim)', fontSize: '1rem' }}>
+              Your proquint name is now registered
+            </div>
+            <style>{`
+              @keyframes bounce {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.2); }
+              }
+            `}</style>
+          </>
+        ) : step === 'commit' ? (
+          <>
+            <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>⏳</div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>
               {isConfirming ? 'Confirming Commitment' : 'Confirm in Wallet'}
             </div>
-            <div style={{ color: 'var(--text-dim)', fontSize: '0.8rem', marginTop: '0.25rem' }}>
+            <div style={{ color: 'var(--text-dim)', fontSize: '0.95rem', marginTop: '0.4rem' }}>
               {isConfirming ? 'Processing on-chain…' : 'Approve the commit transaction'}
             </div>
           </>
-        )}
-        {step === 'register' && (
+        ) : (
           <>
-            <div style={{ fontSize: '2rem', marginBottom: '0.4rem' }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>
               {isConfirming ? '⏳' : '👛'}
             </div>
-            <div style={{ fontSize: '0.95rem', fontWeight: 600 }}>
+            <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>
               {isConfirming ? 'Confirming Registration' : 'Confirm in Wallet'}
             </div>
-            <div style={{ color: 'var(--text-dim)', fontSize: '0.8rem', marginTop: '0.25rem' }}>
+            <div style={{ color: 'var(--text-dim)', fontSize: '0.95rem', marginTop: '0.4rem' }}>
               {isConfirming ? 'Processing on-chain…' : 'Approve the registration transaction'}
             </div>
           </>
@@ -106,7 +181,7 @@ export function TransactionStatus({
 
       {onCancel && !isSuccess && (
         <div className="actions" style={{ justifyContent: 'center' }}>
-          <button className="secondary" onClick={onCancel}>Cancel</button>
+          <button className="secondary" onClick={onCancel} style={{ fontSize: '1rem' }}>Cancel</button>
         </div>
       )}
     </div>

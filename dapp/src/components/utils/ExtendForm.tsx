@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi'
 import { ProquintInput } from './ProquintInput'
 import { useAvailability } from '../../hooks/useAvailability'
 import { CONTRACTS, CONSTANTS } from '../../libs/contracts'
 import { PROQUINT_ABI } from '../../libs/abi/ERC721ABI'
 import { encodePacked } from 'viem'
-import { proquintToBytes4, bytes4ToProquint, validateProquint, calculatePrice, formatPrice } from '../../libs/proquint'
+import { proquintToBytes4, bytes4ToProquint, validateProquint, calculateRenewPrice, formatPrice } from '../../libs/proquint'
 
 export function ExtendForm() {
   const { address } = useAccount()
@@ -20,13 +20,22 @@ export function ExtendForm() {
       return null
     }
   })()
-  const normalizedProquint = normalizedId ? bytes4ToProquint(normalizedId) : null
+  const normalizedProquint = normalizedId ? bytes4ToProquint(normalizedId).toUpperCase() : null
 
   const { writeContract, data: hash, isPending } = useWriteContract()
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash })
 
+  const { data: expiryTs } = useReadContract({
+    address: CONTRACTS.ProquintNFT,
+    abi: PROQUINT_ABI,
+    functionName: 'getExpiry',
+    args: normalizedId ? [normalizedId] : undefined,
+    query: { enabled: !!normalizedId },
+  })
+
   const isPalin = normalizedProquint ? normalizedProquint.split('-')[0] === normalizedProquint.split('-')[1] : false
-  const price = proquint && validateProquint(proquint) ? calculatePrice(years, isPalin) : 0n
+  const remaining = expiryTs ? Math.max(0, Number(expiryTs) - Math.floor(Date.now() / 1000)) : 0
+  const price = proquint && validateProquint(proquint) ? calculateRenewPrice(years, remaining, isPalin) : 0n
   const canExtend = proquint && validateProquint(proquint) && years >= 1 && years <= CONSTANTS.MAX_YEARS && !isLoading
 
   const handleExtend = () => {

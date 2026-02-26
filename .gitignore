@@ -8,3 +8,5 @@ out/
 docs/
 node_modules
 *.log
+test/svg
+*.info

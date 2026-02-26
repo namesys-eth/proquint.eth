@@ -40,10 +40,10 @@ export function DocsPage() {
             padding: '0.75rem 1rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '6px',
             marginBottom: '0.75rem', fontSize: '0.9rem', ...mono,
           }}>
-            <span style={{ color: 'var(--text-dim)' }}>Base</span><span>0.00024 ETH / year</span>
-            <span style={{ color: 'var(--text-dim)' }}>N years</span><span>(2ᴺ − 1) × 0.00024 ETH</span>
-            <span style={{ color: 'var(--text-dim)' }}>Palindrome</span><span>5× multiplier</span>
-            <span style={{ color: 'var(--text-dim)' }}>Refund</span><span>0.00002 ETH / remaining month</span>
+            <span style={{ color: 'var(--text-dim)' }}>Base</span><span>0.00036 ETH / year</span>
+            <span style={{ color: 'var(--text-dim)' }}>N years</span><span>(2ᴺ − 1) × 0.00036 ETH</span>
+            <span style={{ color: 'var(--text-dim)' }}>Twin</span><span>5× multiplier</span>
+            <span style={{ color: 'var(--text-dim)' }}>Refund</span><span>0.00003 ETH / remaining month</span>
             <span style={{ color: 'var(--text-dim)' }}>Max</span><span>12 years</span>
           </div>
         </section>
@@ -84,7 +84,7 @@ export function DocsPage() {
             <strong style={{ color: 'var(--text-dim)' }}>Effect</strong>
 
             <span style={mono}>acceptInbox</span><span>Receiver</span><span>Before expiry</span><span>Inbox → Primary</span>
-            <span style={mono}>acceptInbox</span><span>Anyone</span><span>Expiry → +7d</span><span>Inbox → Primary (helper)</span>
+            <span style={mono}>acceptInboxOnBehalf</span><span>Anyone</span><span>Expiry → +7d</span><span>Inbox → Primary (helper)</span>
             <span style={mono}>shelve</span><span>Owner</span><span>While active</span><span>Primary → Inbox (7d penalty)</span>
             <span style={mono}>rejectInbox</span><span>Receiver</span><span>Before expiry</span><span>Burn + refund</span>
             <span style={mono}>cleanInbox</span><span>Anyone</span><span>After expiry +7d</span><span>Burn + reward split</span>
@@ -96,10 +96,10 @@ export function DocsPage() {
             Anti-Sybil
           </h2>
           <ul style={{ lineHeight: 1.8, paddingLeft: '1.5rem', fontSize: '0.9rem' }}>
-            <li><strong>Commit-reveal:</strong> 5s min delay, 15min max. Prevents front-running.</li>
+            <li><strong>Commit-reveal:</strong> 25s min delay, 25min max. Prevents front-running.</li>
             <li><strong>Transfer penalty:</strong> every transfer or shelve subtracts 7 days from expiry.</li>
             <li><strong>One primary per address.</strong> <code style={mono}>register</code> and <code style={mono}>acceptInbox</code> enforce this.</li>
-            <li><strong>Inbox cap:</strong> max 255 pending items per address.</li>
+            <li><strong>Inbox cap:</strong> max 45 pending items per address.</li>
           </ul>
         </section>
 

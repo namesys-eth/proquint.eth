@@ -1,8 +1,9 @@
 import { ProquintInput } from '../utils/ProquintInput'
 import { ToggleButtons } from '../utils/ToggleButtons'
 import { Identicon } from '../utils/Identicon'
+import { monoStyle } from '../utils/styles'
 import { HelpDot } from '../utils/Tooltip'
-import { formatPrice, isPalindromic, proquintToBytes4 } from '../../libs/proquint'
+import { formatPrice, isTwin, proquintToBytes4 } from '../../libs/proquint'
 import { useState, useEffect, useMemo } from 'react'
 import { usePublicClient, useReadContract } from 'wagmi'
 import { normalize } from 'viem/ens'
@@ -72,10 +73,10 @@ export function RegistrationSetup({
     if (mintToSelf && receiver) setReceiver('')
   }, [mintToSelf, receiver, setReceiver])
 
-  // Palindrome check
+  // Twin check
   let isPalin = false
   try {
-    if (proquint && normalizedId) isPalin = isPalindromic(proquintToBytes4(proquint))
+    if (proquint && normalizedId) isPalin = isTwin(proquintToBytes4(proquint))
   } catch { isPalin = false }
 
   // Inbox warning logic
@@ -151,10 +152,14 @@ export function RegistrationSetup({
             const ensAddress = await mainnetClient.getEnsAddress({ name: normalize(receiver) })
             if (ensAddress) {
               setResolvedReceiver(ensAddress)
+              setIsResolving(false)
               onResolvedReceiverChange?.(ensAddress)
+              return
             }
           } catch {}
         }
+        setResolvedReceiver(null)
+        onResolvedReceiverChange?.(null)
       } catch (err) {
         console.error('Resolution error:', err)
       }
@@ -165,8 +170,6 @@ export function RegistrationSetup({
     return () => clearTimeout(timer)
   }, [receiver, mintToSelf, localClient, mainnetClient, onResolvedReceiverChange])
 
-  const mono = { fontFamily: "'SF Mono', 'Monaco', monospace" } as const
-
   return (
     <div className="card">
       <div className="registration-layout">
@@ -175,7 +178,7 @@ export function RegistrationSetup({
           <div className="registration-identicon">
             <div style={{ position: 'relative', width: '100%', maxWidth: '240px' }}>
               {!mintToSelf && isResolving ? (
-                <div style={{ width: '240px', height: '240px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg)', borderRadius: '0.5rem' }}>
+                <div style={{ width: '240px', height: '240px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--surface)', borderRadius: '0.5rem', border: '1px solid var(--border)' }}>
                   <span style={{ fontSize: '2rem' }}>⏳</span>
                 </div>
               ) : (
@@ -190,7 +193,7 @@ export function RegistrationSetup({
                   fontWeight: 700, textAlign: 'center',
                   borderBottomLeftRadius: '0.5rem', borderBottomRightRadius: '0.5rem',
                   textTransform: 'uppercase', letterSpacing: '0.03em',
-                  ...mono, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                  ...monoStyle, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
                 }}>
                   {proquint}
                 </div>
@@ -201,39 +204,67 @@ export function RegistrationSetup({
 
         {/* Inputs */}
         <div className="registration-inputs">
-          <div className="form-group" style={{ marginBottom: '0.5rem' }}>
-            <label style={{ fontWeight: 600, marginBottom: '0.4rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <div className="form-group" style={{ marginBottom: '1rem' }}>
+            <label style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.5rem', display: 'block' }}>
               Name
             </label>
-            <ProquintInput value={proquint} onChange={setProquint} showBytes4={true} />
+            <ProquintInput value={proquint} onChange={setProquint} showBytes4={false} />
           </div>
 
-          <div className="form-group" style={{ marginBottom: '0.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.4rem' }}>
-              <label style={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Duration {isPalin && <span style={{ color: 'var(--warning)' }} title="Palindromic names cost 5×">🔄</span>}
+          {/* Hex ID and Year slider on same line - mobile first */}
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: '1fr',
+            gap: '1rem', 
+            marginBottom: '1rem'
+          }} className="year-hex-grid">
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label htmlFor="hex-id-display" style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-dim)', marginBottom: '0.25rem', display: 'block' }}>
+                Hex ID:
               </label>
-              <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--accent)' }}>
-                {years} {years === 1 ? 'yr' : 'yrs'}
-              </span>
+              <input
+                id="hex-id-display"
+                type="text"
+                value={normalizedId ?? ''}
+                readOnly
+                placeholder="0x00000000"
+                style={{
+                  fontFamily: "'SF Mono', 'Monaco', monospace",
+                  fontSize: '0.9rem',
+                  padding: '0.6rem 0.75rem',
+                  color: 'var(--text-dim)',
+                  backgroundColor: 'var(--bg)',
+                  cursor: 'default'
+                }}
+              />
             </div>
-            <input
-              id="years-input"
-              type="range"
-              min={1}
-              max={CONSTANTS.MAX_YEARS}
-              value={years > CONSTANTS.MAX_YEARS ? CONSTANTS.MAX_YEARS : years}
-              onChange={(e) => setYears(Number(e.target.value))}
-              style={{ width: '100%', height: '8px', cursor: 'pointer' }}
-              title={years > 1 ? 'Exponential: renewing yearly is cheaper' : ''}
-            />
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.5rem' }}>
+                <label style={{ fontSize: '1rem', fontWeight: 600 }}>
+                  Duration{isPalin && <span style={{ color: 'var(--warning)', fontSize: '0.85rem', marginLeft: '0.35rem' }}>(Twin 5×)</span>}
+                </label>
+                <span style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--accent)' }}>
+                  {years} {years === 1 ? 'yr' : 'yrs'}
+                </span>
+              </div>
+              <input
+                id="years-input"
+                type="range"
+                min={1}
+                max={CONSTANTS.MAX_YEARS}
+                value={years > CONSTANTS.MAX_YEARS ? CONSTANTS.MAX_YEARS : years}
+                onChange={(e) => setYears(Number(e.target.value))}
+                style={{ width: '100%', height: '8px', cursor: 'pointer' }}
+                title={years > 1 ? 'Exponential: renewing yearly is cheaper' : ''}
+              />
+            </div>
           </div>
         </div>
       </div>
 
       {/* Mint To */}
-      <div className="form-group" style={{ marginTop: '1rem', marginBottom: '0.75rem' }}>
-        <label style={{ fontWeight: 600, marginBottom: '0.4rem', display: 'block', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+      <div className="form-group" style={{ marginTop: '1.5rem', marginBottom: '1rem' }}>
+        <label style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.5rem', display: 'block', textAlign: 'center' }}>
           Mint To
         </label>
         <div style={{ marginBottom: '0.75rem' }}>
@@ -251,7 +282,7 @@ export function RegistrationSetup({
           <div style={{
             padding: '0.65rem 0.75rem',
             backgroundColor: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '6px',
-            ...mono, fontSize: '0.85rem', color: 'var(--text-dim)'
+            ...monoStyle, fontSize: '0.85rem', color: 'var(--text-dim)'
           }}>
             {address || 'Connect wallet'}
           </div>
@@ -262,22 +293,41 @@ export function RegistrationSetup({
             placeholder="0x… / name.eth / cvcvc-cvcvc"
             value={receiver}
             onChange={(e) => setReceiver(e.target.value)}
-            style={{ ...mono, fontSize: '0.9rem' }}
+            style={{ ...monoStyle, fontSize: '0.9rem' }}
             title="Ethereum address, ENS name, or proquint name"
           />
         )}
       </div>
 
+      {/* Receiver Display */}
+      {!mintToSelf && resolvedReceiver && (
+        <div style={{
+          padding: '1rem',
+          marginTop: '1.5rem',
+          marginBottom: '1rem',
+          backgroundColor: 'color-mix(in srgb, var(--primary) 10%, transparent)',
+          border: '1px solid color-mix(in srgb, var(--primary) 30%, transparent)',
+          borderRadius: '6px',
+        }}>
+          <div style={{ fontSize: '0.9rem', color: 'var(--text-dim)', marginBottom: '0.5rem', textAlign: 'center' }}>
+            Registering to:
+          </div>
+          <div style={{ ...monoStyle, fontSize: '0.85rem', color: 'var(--text)', textAlign: 'center', wordBreak: 'break-all' }}>
+            {resolvedReceiver}
+          </div>
+        </div>
+      )}
+
       {/* Info grid */}
       {price > 0n && (
-        <div className="info-grid">
+        <div className="info-grid" style={{ marginTop: '1.5rem' }}>
           <div className="info-item">
             <div className="info-label">Cost</div>
             <div className="info-value">{formatPrice(price)} ETH</div>
           </div>
           <div className="info-item">
             <div className="info-label">Normalized</div>
-            <div className="info-value">{normalizedProquint ?? '—'}</div>
+            <div className="info-value">{normalizedProquint?.toUpperCase() ?? '—'}</div>
           </div>
           <div className="info-item">
             <div className="info-label">bytes4</div>
@@ -292,7 +342,7 @@ export function RegistrationSetup({
               <div className="info-label">Resolved To</div>
               <div className="info-value" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                 <Identicon address={resolvedReceiver} size={20} />
-                <span style={{ ...mono, fontSize: '0.8rem', flex: 1, minWidth: '180px' }}>{resolvedReceiver}</span>
+                <span style={{ ...monoStyle, fontSize: '0.8rem', flex: 1, minWidth: '180px' }}>{resolvedReceiver}</span>
                 {explorerAddressUrl(resolvedReceiver) && (
                   <a href={explorerAddressUrl(resolvedReceiver)} target="_blank" rel="noopener noreferrer"
                     style={{ color: 'var(--accent)', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 500 }}>
@@ -308,13 +358,13 @@ export function RegistrationSetup({
       {/* Inbox warning */}
       {shouldShowInboxWarning && (
         <div style={{
-          padding: '0.65rem 0.75rem', marginBottom: '0.75rem',
+          padding: '1rem', marginBottom: '1rem', marginTop: '1rem',
           backgroundColor: 'color-mix(in srgb, var(--warning) 10%, transparent)',
           border: '1px solid color-mix(in srgb, var(--warning) 30%, transparent)',
-          borderRadius: '6px', fontSize: '0.8rem', lineHeight: 1.5
+          borderRadius: '6px', fontSize: '0.95rem', lineHeight: 1.6
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.2rem' }}>
-            <strong style={{ color: 'var(--warning)' }}>Goes to Inbox</strong>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.3rem' }}>
+            <strong style={{ color: 'var(--warning)', fontSize: '1rem' }}>⚠️ Goes to Inbox</strong>
             <HelpDot text="You have a primary. New names go to inbox with a decaying claim window (42d→7d). After expiry: 7d open claim, then burnable." position="bottom" />
           </div>
           <span style={{ color: 'var(--text-dim)' }}>
@@ -325,13 +375,13 @@ export function RegistrationSetup({
       )}
 
       {/* Commit button */}
-      <div className="actions">
+      <div className="actions" style={{ marginTop: '2rem' }}>
         <button
           onClick={onCommit}
           disabled={!canCommit || isPending || isConfirming}
-          style={{ width: '100%', fontWeight: 600 }}
+          style={{ width: '100%', fontWeight: 600, fontSize: '1.05rem', padding: '0.9rem 1.5rem' }}
         >
-          {isPending || isConfirming ? 'Committing…' : isAvailable ? 'Commit' : 'Not available'}
+          {isPending || isConfirming ? 'Committing…' : isAvailable ? 'Commit Registration' : 'Not Available'}
         </button>
       </div>
     </div>

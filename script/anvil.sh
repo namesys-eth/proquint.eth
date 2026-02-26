@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # ── Anvil local dev chain launcher ──
-# Starts anvil, deploys ProquintNFT, and prints the contract address.
+# Starts anvil, deploys Proquint, and prints the contract address.
 # Usage: ./script/anvil.sh
 #
 # Anvil account #0 is the deployer:
@@ -72,8 +72,8 @@ fi
 echo "  ✓ Build OK"
 echo ""
 
-# 3. Deploy ProquintNFT
-echo "▸ Deploying ProquintNFT..."
+# 3. Deploy Proquint
+echo "▸ Deploying Proquint..."
 DEPLOY_OUTPUT=$(cd "$PROJECT_ROOT" && forge script script/Deploy.s.sol \
   --rpc-url "$RPC_URL" \
   --private-key "$DEPLOYER_KEY" \
@@ -107,7 +107,7 @@ if [ -z "$CONTRACT_ADDR" ]; then
   exit 1
 fi
 
-echo "  ✓ ProquintNFT deployed at: ${CONTRACT_ADDR}"
+echo "  ✓ Proquint deployed at: ${CONTRACT_ADDR}"
 echo ""
 echo "═══════════════════════════════════════════"
 echo "  RPC URL:    ${RPC_URL}"

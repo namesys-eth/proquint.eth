@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useAccount } from 'wagmi'
-import { loadConfig, saveConfig, resetConfig, PRESETS, type AppConfig } from '../libs/config'
-import { clearCache } from '../libs/eventCache'
-import { ToggleButtons } from './utils/ToggleButtons'
-import { useThemeContext } from '../hooks/ThemeContext'
-import { useEvents } from '../hooks/EventIndexerContext'
+import { loadConfig, saveConfig, resetConfig, PRESETS, type AppConfig } from '../../libs/config'
+import { monoStyle, inputStyle as sharedInputStyle } from '../utils/styles'
+import { clearCache } from '../../libs/eventCache'
+import { ToggleButtons } from '../utils/ToggleButtons'
+import { useThemeContext } from '../../hooks/ThemeContext'
+import { useEvents } from '../../hooks/EventIndexerContext'
 
 interface ConfigModalProps {
   open: boolean
@@ -49,10 +50,7 @@ const labelStyle: React.CSSProperties = {
 }
 
 const inputStyle: React.CSSProperties = {
-  fontFamily: "'SF Mono', 'Monaco', monospace",
-  fontSize: '0.85rem',
-  padding: '0.6rem',
-  width: '100%',
+  ...sharedInputStyle,
 }
 
 export function ConfigModal({ open, onClose }: ConfigModalProps) {
@@ -221,7 +219,7 @@ export function ConfigModal({ open, onClose }: ConfigModalProps) {
               borderRadius: '6px',
               marginBottom: '1rem',
               fontSize: '0.8rem',
-              fontFamily: "'SF Mono', 'Monaco', monospace",
+              ...monoStyle,
               lineHeight: 1.7,
               color: 'var(--text-dim)',
             }}>
@@ -276,13 +274,13 @@ export function ConfigModal({ open, onClose }: ConfigModalProps) {
             }}>
               <div style={{ padding: '0.6rem', background: 'var(--bg)', borderRadius: '6px', border: '1px solid var(--border)' }}>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Events Cached</div>
-                <div style={{ fontFamily: "'SF Mono', 'Monaco', monospace", fontSize: '1rem', fontWeight: 600, color: 'var(--accent)' }}>
+                <div style={{ ...monoStyle, fontSize: '1rem', fontWeight: 600, color: 'var(--accent)' }}>
                   {loading ? '…' : events.length.toLocaleString()}
                 </div>
               </div>
               <div style={{ padding: '0.6rem', background: 'var(--bg)', borderRadius: '6px', border: '1px solid var(--border)' }}>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Last Block</div>
-                <div style={{ fontFamily: "'SF Mono', 'Monaco', monospace", fontSize: '1rem', fontWeight: 600, color: 'var(--accent)' }}>
+                <div style={{ ...monoStyle, fontSize: '1rem', fontWeight: 600, color: 'var(--accent)' }}>
                   {loading ? '…' : lastBlock > 0 ? lastBlock.toLocaleString() : '—'}
                 </div>
               </div>
@@ -303,6 +301,7 @@ export function ConfigModal({ open, onClose }: ConfigModalProps) {
                   if (address && chainId) {
                     clearCache(address, chainId)
                     setCacheCleared(true)
+                    refetch() // Trigger re-fetch after clearing cache
                     setTimeout(() => setCacheCleared(false), 2000)
                   }
                 }}

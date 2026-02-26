@@ -111,7 +111,7 @@ export function HomePage() {
   return (
     <div className="container">
       {/* Hero */}
-      <div style={{ textAlign: 'center', padding: '2rem 0 1rem' }}>
+      <div style={{ textAlign: 'center', padding: '2.5rem 0 1.5rem' }}>
         <div style={{
           ...mono,
           fontSize: 'clamp(2.5rem, 8vw, 4.5rem)',
@@ -157,161 +157,176 @@ export function HomePage() {
         }}>
           {hexId}
         </div>
-        <p style={{ color: 'var(--text)', fontSize: '1.05rem', lineHeight: 1.6, maxWidth: '520px', margin: '0 auto 2rem' }}>
-          Human-Readable, Spellable, Pronounceable Identifiers on Ethereum
+        <p style={{ color: 'var(--text)', fontSize: '1rem', lineHeight: 1.6, maxWidth: '480px', margin: '0 auto 1.75rem' }}>
+          Human Readable, Spellable, Pronounceable Identifier on Ethereum.
         </p>
-        <button onClick={() => navigate('/register')} style={{ padding: '0.75rem 2.5rem', fontSize: '1rem', fontWeight: 600 }}>
-          Register a Name
+        
+        <button 
+          onClick={() => navigate('/register')} 
+          style={{ padding: '0.75rem 2rem', fontSize: '0.95rem', fontWeight: 600 }}
+        >
+          Get a Name
         </button>
       </div>
 
-      {/* Stats bar */}
+      {/* Stats */}
       <div style={{
         display: 'flex', justifyContent: 'center', gap: '2rem', flexWrap: 'wrap',
-        padding: '1rem 0', margin: '0.5rem 0 1rem',
+        padding: '1rem 0', margin: '0 0 1rem',
         borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)',
       }}>
         {[
-          { label: 'Registered', val: supply },
+          { label: 'Names', val: supply },
           { label: 'Active', val: active },
-          { label: 'In Inbox', val: inboxed },
+          { label: 'Inbox', val: inboxed },
         ].map(({ label, val }) => (
-          <div key={label} style={{ textAlign: 'center', minWidth: '80px' }}>
-            <div style={{ ...mono, fontSize: '1.25rem', fontWeight: 700, color: 'var(--accent)' }}>{val.toLocaleString()}</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</div>
+          <div key={label} style={{ textAlign: 'center', minWidth: '70px' }}>
+            <div style={{ ...mono, fontSize: '1.2rem', fontWeight: 700, color: 'var(--accent)' }}>{val.toLocaleString()}</div>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</div>
           </div>
         ))}
       </div>
 
-      {/* Encoding Schema */}
-      <div className="card">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
-          <span style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--accent)' }}>Encoding Schema</span>
-          <span style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
-        </div>
-
-        {/* Alphabet grid — first */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '1.25rem' }}>
-          <div style={{ padding: '0.75rem', background: 'var(--bg)', borderRadius: '6px', border: '1px solid var(--border)' }}>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>16 Consonants · 4 bits</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
+      {/* The Alphabet */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '1.5rem 0 0.75rem' }}>
+        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          The Alphabet
+        </span>
+        <span style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+      </div>
+      <div className="card" style={{ padding: '0.75rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
+          <div style={{ flex: 1, padding: '0.6rem', background: 'var(--bg)', borderRadius: '4px', border: '1px solid var(--border)', textAlign: 'center' }}>
+            <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <span style={{ color: 'var(--accent)', fontWeight: 700 }}>C</span>onsonants (4 bits)
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.15rem', justifyContent: 'center' }}>
               {CONSONANTS.map(c => (
-                <span key={c} style={{ ...mono, fontSize: '0.9rem', fontWeight: 600, color: 'var(--accent)', width: '1.2rem', textAlign: 'center' }}>{c}</span>
+                <span key={c} style={{ ...mono, fontSize: '0.8rem', fontWeight: 600, color: 'var(--accent)', width: '1rem', textAlign: 'center' }}>{c}</span>
               ))}
             </div>
           </div>
-          <div style={{ padding: '0.75rem', background: 'var(--bg)', borderRadius: '6px', border: '1px solid var(--border)' }}>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>4 Vowels · 2 bits</div>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div style={{ flex: 1, padding: '0.6rem', background: 'var(--bg)', borderRadius: '4px', border: '1px solid var(--border)', textAlign: 'center' }}>
+            <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <span style={{ color: 'var(--warning)', fontWeight: 700 }}>V</span>owels (2 bits)
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
               {VOWELS.map(v => (
-                <span key={v} style={{ ...mono, fontSize: '0.9rem', fontWeight: 600, color: 'var(--warning)', width: '1.2rem', textAlign: 'center' }}>{v}</span>
+                <span key={v} style={{ ...mono, fontSize: '0.8rem', fontWeight: 600, color: 'var(--warning)', width: '1rem', textAlign: 'center' }}>{v}</span>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Pattern breakdown */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '2px', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '2px', flexWrap: 'wrap' }}>
           {['C','V','C','V','C'].map((ch, i) => (
             <div key={i} style={{
               ...mono,
               flex: ch === 'C' ? '1 1 0' : '0.7 1 0',
-              maxWidth: ch === 'C' ? '3rem' : '2rem',
-              minWidth: ch === 'C' ? '2rem' : '1.4rem',
-              padding: '0.45rem 0',
+              maxWidth: ch === 'C' ? '2.5rem' : '1.8rem',
+              minWidth: ch === 'C' ? '1.6rem' : '1.2rem',
+              padding: '0.35rem 0',
               textAlign: 'center',
               borderRadius: '4px',
-              fontSize: 'clamp(0.7rem, 2vw, 0.85rem)',
+              fontSize: '0.75rem',
               fontWeight: 700,
               background: ch === 'C' ? 'color-mix(in srgb, var(--accent) 12%, transparent)' : 'color-mix(in srgb, var(--warning) 10%, transparent)',
               color: ch === 'C' ? 'var(--accent)' : 'var(--warning)',
               border: `1px solid ${ch === 'C' ? 'color-mix(in srgb, var(--accent) 20%, transparent)' : 'color-mix(in srgb, var(--warning) 20%, transparent)'}`,
             }}>
-              <div>{ch}</div>
-              <div style={{ fontSize: '0.55rem', opacity: 0.7, marginTop: '1px' }}>{ch === 'C' ? '4b' : '2b'}</div>
+              {ch}
             </div>
           ))}
-          <div style={{ ...mono, alignSelf: 'center', color: 'var(--text-dim)', fontSize: '0.9rem', padding: '0 0.15rem', flexShrink: 0 }}>-</div>
+          <div style={{ ...mono, alignSelf: 'center', color: 'var(--text-dim)', fontSize: '0.8rem', padding: '0 0.1rem' }}>-</div>
           {['C','V','C','V','C'].map((ch, i) => (
             <div key={`b${i}`} style={{
               ...mono,
               flex: ch === 'C' ? '1 1 0' : '0.7 1 0',
-              maxWidth: ch === 'C' ? '3rem' : '2rem',
-              minWidth: ch === 'C' ? '2rem' : '1.4rem',
-              padding: '0.45rem 0',
+              maxWidth: ch === 'C' ? '2.5rem' : '1.8rem',
+              minWidth: ch === 'C' ? '1.6rem' : '1.2rem',
+              padding: '0.35rem 0',
               textAlign: 'center',
               borderRadius: '4px',
-              fontSize: 'clamp(0.7rem, 2vw, 0.85rem)',
+              fontSize: '0.75rem',
               fontWeight: 700,
               background: ch === 'C' ? 'color-mix(in srgb, var(--accent) 12%, transparent)' : 'color-mix(in srgb, var(--warning) 10%, transparent)',
               color: ch === 'C' ? 'var(--accent)' : 'var(--warning)',
               border: `1px solid ${ch === 'C' ? 'color-mix(in srgb, var(--accent) 20%, transparent)' : 'color-mix(in srgb, var(--warning) 20%, transparent)'}`,
             }}>
-              <div>{ch}</div>
-              <div style={{ fontSize: '0.55rem', opacity: 0.7, marginTop: '1px' }}>{ch === 'C' ? '4b' : '2b'}</div>
+              {ch}
             </div>
           ))}
         </div>
-
-        {/* Supply stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-          <div style={{ padding: '0.6rem', background: 'var(--bg)', borderRadius: '6px', border: '1px solid var(--border)', textAlign: 'center' }}>
-            <div style={{ ...mono, fontSize: 'clamp(0.85rem, 2.5vw, 1.05rem)', fontWeight: 700, color: 'var(--accent)' }}>2,147,516,416</div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Max Supply</div>
-          </div>
-          <div style={{ padding: '0.6rem', background: 'var(--bg)', borderRadius: '6px', border: '1px solid var(--border)', textAlign: 'center' }}>
-            <div style={{ ...mono, fontSize: 'clamp(0.85rem, 2.5vw, 1.05rem)', fontWeight: 700, color: 'var(--accent)' }}>65,536</div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Palindromes</div>
-          </div>
-        </div>
       </div>
 
-      {/* Registration */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0.5rem 0 0.75rem', padding: '0 0.25rem' }}>
-        <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--accent)' }}>Registration</span>
+      {/* The Namespace */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '1.5rem 0 0.75rem' }}>
+        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          The Namespace
+        </span>
         <span style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.5rem', marginBottom: '1rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem', marginBottom: '1rem' }}>
         {[
-          { title: 'Commit-Reveal', desc: 'Two-step registration prevents front-running.' },
-          { title: 'Exponential Pricing', desc: '(2ʸ − 1) × 0.00024 ETH per year. Palindromes 5×.' },
-          { title: 'One Primary', desc: 'One active name per address. Extras go to inbox.' },
-          { title: 'ERC-721', desc: 'Standard NFT. Transferable and tradeable.' },
-        ].map(({ title, desc }) => (
-          <div key={title} style={{
-            padding: '0.85rem 1rem',
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            borderRadius: '6px',
-            textAlign: 'center',
-          }}>
-            <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--accent)', marginBottom: '0.25rem' }}>{title}</div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)', lineHeight: 1.5 }}>{desc}</div>
+          { label: 'Max Supply', val: '2.1B', sub: '50% of 2³²' },
+          { label: 'Twins', val: '65,536', sub: 'Palindromes' },
+        ].map(({ label, val, sub }) => (
+          <div key={label} style={{ textAlign: 'center', padding: '0.6rem', background: 'var(--surface)', borderRadius: '6px', border: '1px solid var(--border)' }}>
+            <div style={{ ...mono, fontSize: 'clamp(0.9rem, 2vw, 1.1rem)', fontWeight: 700, color: 'var(--accent)' }}>{val}</div>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text)', fontWeight: 500 }}>{label}</div>
+            <div style={{ fontSize: '0.6rem', color: 'var(--text-dim)' }}>{sub}</div>
           </div>
         ))}
       </div>
 
-      {/* Inbox System */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0.5rem 0 0.75rem', padding: '0 0.25rem' }}>
-        <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--accent)' }}>Inbox System</span>
+      {/* How It Works */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '1.5rem 0 0.75rem' }}>
+        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          How It Works
+        </span>
         <span style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.5rem', marginBottom: '1rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.5rem', marginBottom: '1rem' }}>
         {[
-          { title: 'Claim Window', desc: 'Decaying: 42d (first item) → 7d (255th). Max 255 per address.' },
-          { title: 'Open Claim', desc: '7d after expiry, anyone can accept on owner\'s behalf.' },
-          { title: 'Burn & Refund', desc: 'Owner rejects for refund. Others burn after open claim for split reward.' },
-          { title: 'Shelve', desc: 'Move primary to inbox to free the slot. 7d penalty on expiry.' },
+          { title: 'Say It Out Loud', desc: 'Names like TOBAM-HABOB, VUJOH-BUGOV. Easy to say and remember.' },
+          { title: '32 Bits', desc: 'Every address maps to a unique CVCVC-CVCVC pattern.' },
+          { title: 'Commit & Reveal', desc: 'Two-step to prevent front-running. Wait 60s, then register.' },
+          { title: 'Fair Pricing', desc: 'Cheap for 1 year. Exponential cost for more. Prevents bots.' },
         ].map(({ title, desc }) => (
           <div key={title} style={{
-            padding: '0.85rem 1rem',
+            padding: '0.75rem 1rem',
             background: 'var(--surface)',
             border: '1px solid var(--border)',
             borderRadius: '6px',
-            textAlign: 'center',
           }}>
-            <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--accent)', marginBottom: '0.25rem' }}>{title}</div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)', lineHeight: 1.5 }}>{desc}</div>
+            <div style={{ fontWeight: 600, fontSize: '0.8rem', color: 'var(--accent)', marginBottom: '0.2rem' }}>{title}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', lineHeight: 1.5 }}>{desc}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* One Primary + Inbox */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '1.5rem 0 0.75rem' }}>
+        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          One Primary + Inbox
+        </span>
+        <span style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.5rem', marginBottom: '1rem' }}>
+        {[
+          { title: 'One Name Per Address', desc: 'Each address has one primary. Extras go to inbox.' },
+          { title: 'Claim Window', desc: '42 days for first item. Decays to 7 days.' },
+          { title: 'Open Claim', desc: 'After 7 days, anyone can claim on your behalf.' },
+          { title: 'Burn or Keep', desc: 'Reject for refund, or accept as primary.' },
+        ].map(({ title, desc }) => (
+          <div key={title} style={{
+            padding: '0.75rem 1rem',
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: '6px',
+          }}>
+            <div style={{ fontWeight: 600, fontSize: '0.8rem', color: 'var(--accent)', marginBottom: '0.2rem' }}>{title}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', lineHeight: 1.5 }}>{desc}</div>
           </div>
         ))}
       </div>

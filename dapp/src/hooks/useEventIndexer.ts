@@ -25,7 +25,11 @@ function parseLog(log: Log, eventName: string): CachedEvent | null {
     for (const [key, val] of Object.entries(rawArgs)) {
       if (val === null || val === undefined) continue
       if (typeof val === 'bigint') {
+        // Keep bigint as string to preserve precision
         args[key] = val.toString()
+      } else if (typeof val === 'number') {
+        // Convert number to string
+        args[key] = String(val)
       } else if (typeof val === 'string') {
         // Indexed bytes4 comes back as bytes32-padded hex — extract first 8 hex chars
         if (val.startsWith('0x') && val.length === 66) {
@@ -44,6 +48,7 @@ function parseLog(log: Log, eventName: string): CachedEvent | null {
     blockNumber: Number(log.blockNumber),
     transactionHash: log.transactionHash,
     logIndex: log.logIndex ?? 0,
+    timestamp: 0, // Will be filled in by fetchEvents with actual block timestamp
     args,
   }
 }
@@ -183,26 +188,68 @@ export function useEventIndexer() {
         ])
 
       const newEvents: CachedEvent[] = []
+      const blockTimestamps = new Map<number, number>()
+
+      // Helper to get block timestamp
+      const getBlockTimestamp = async (blockNum: number): Promise<number> => {
+        if (blockTimestamps.has(blockNum)) return blockTimestamps.get(blockNum)!
+        const block = await client.getBlock({ blockNumber: BigInt(blockNum) })
+        const ts = Number(block.timestamp)
+        blockTimestamps.set(blockNum, ts)
+        return ts
+      }
 
       for (const log of transfersFrom) {
         const parsed = parseLog(log as any, 'Transfer')
-        if (parsed) newEvents.push(parsed)
+        if (parsed) {
+          parsed.timestamp = await getBlockTimestamp(parsed.blockNumber)
+          newEvents.push(parsed)
+        }
       }
       for (const log of transfersTo) {
         const parsed = parseLog(log as any, 'Transfer')
-        if (parsed) newEvents.push(parsed)
+        if (parsed) {
+          parsed.timestamp = await getBlockTimestamp(parsed.blockNumber)
+          newEvents.push(parsed)
+        }
       }
       for (const log of primaryUpdated) {
         const parsed = parseLog(log as any, 'PrimaryUpdated')
-        if (parsed) newEvents.push(parsed)
+        if (parsed) {
+          parsed.timestamp = await getBlockTimestamp(parsed.blockNumber)
+          newEvents.push(parsed)
+        }
       }
+      // Parse InboxUpdated events and filter out burn events that have corresponding mint in same tx
+      const inboxEvents: CachedEvent[] = []
       for (const log of inboxUpdated) {
         const parsed = parseLog(log as any, 'InboxUpdated')
-        if (parsed) newEvents.push(parsed)
+        if (parsed) {
+          parsed.timestamp = await getBlockTimestamp(parsed.blockNumber)
+          inboxEvents.push(parsed)
+        }
+      }
+      
+      // Filter: skip InboxUpdated(0) if there's InboxUpdated(non-zero) for same ID in same tx
+      for (const evt of inboxEvents) {
+        const isRemoval = evt.args.inboxExpiry === '0'
+        if (isRemoval) {
+          // Check if there's a corresponding add event in same tx for same ID
+          const hasAddInSameTx = inboxEvents.some(e => 
+            e.transactionHash === evt.transactionHash &&
+            e.args.id === evt.args.id &&
+            e.args.inboxExpiry !== '0'
+          )
+          if (hasAddInSameTx) continue // Skip the removal event
+        }
+        newEvents.push(evt)
       }
       for (const log of renewed) {
         const parsed = parseLog(log as any, 'Renewed')
-        if (parsed) newEvents.push(parsed)
+        if (parsed) {
+          parsed.timestamp = await getBlockTimestamp(parsed.blockNumber)
+          newEvents.push(parsed)
+        }
       }
 
       const merged = deduplicateEvents([...cached, ...newEvents])
@@ -235,15 +282,35 @@ export function useEventIndexer() {
     (eventName: string, logs: Log[]) => {
       if (!address || !chainId) return
       const newParsed: CachedEvent[] = []
+      const now = Math.floor(Date.now() / 1000)
+      
+      // Parse all events first
       for (const log of logs) {
         const parsed = parseLog(log, eventName)
-        if (parsed) newParsed.push(parsed)
+        if (parsed) {
+          parsed.timestamp = now
+          newParsed.push(parsed)
+        }
       }
       if (newParsed.length === 0) return
 
+      // Filter: skip InboxUpdated(0) if there's InboxUpdated(non-zero) for same ID in same tx
+      const filtered = newParsed.filter((evt) => {
+        if (evt.type !== 'InboxUpdated') return true
+        if (evt.args.inboxExpiry !== '0') return true
+        // Check if there's a corresponding add event in same batch
+        const hasAddInSameBatch = newParsed.some(e => 
+          e.type === 'InboxUpdated' &&
+          e.transactionHash === evt.transactionHash &&
+          e.args.id === evt.args.id &&
+          e.args.inboxExpiry !== '0'
+        )
+        return !hasAddInSameBatch
+      })
+
       setEvents((prev) => {
-        const merged = deduplicateEvents([...prev, ...newParsed])
-        const maxBlock = Math.max(...newParsed.map((e) => e.blockNumber), lastBlock)
+        const merged = deduplicateEvents([...prev, ...filtered])
+        const maxBlock = Math.max(...filtered.map((e) => e.blockNumber), lastBlock)
         persist(merged, maxBlock)
         setLastBlock(maxBlock)
         return merged

@@ -135,27 +135,34 @@ export const PROQUINT_ABI = [
     name: 'register',
     stateMutability: 'payable',
     inputs: [{ name: 'input', type: 'bytes32' }],
-    outputs: [{ name: 'tokenId', type: 'uint256' }],
+    outputs: [],
   },
   {
     type: 'function',
     name: 'registerTo',
     stateMutability: 'payable',
     inputs: [{ name: 'input', type: 'bytes32' }, { name: 'to', type: 'address' }],
-    outputs: [{ name: 'tokenId', type: 'uint256' }],
+    outputs: [],
   },
   {
     type: 'function',
     name: 'registerPremium',
     stateMutability: 'payable',
     inputs: [{ name: 'input', type: 'bytes32' }],
-    outputs: [{ name: 'tokenId', type: 'uint256' }],
+    outputs: [],
   },
   {
     type: 'function',
     name: 'renew',
     stateMutability: 'payable',
-    inputs: [{ name: 'input', type: 'bytes32' }],
+    inputs: [{ name: 'input', type: 'bytes5' }],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'burn',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'id', type: 'bytes4' }],
     outputs: [],
   },
 
@@ -184,6 +191,13 @@ export const PROQUINT_ABI = [
   {
     type: 'function',
     name: 'acceptInbox',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'id', type: 'bytes4' }],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'acceptInboxOnBehalf',
     stateMutability: 'nonpayable',
     inputs: [{ name: 'id', type: 'bytes4' }],
     outputs: [],
@@ -262,7 +276,7 @@ export const PROQUINT_ABI = [
   },
   {
     type: 'function',
-    name: 'expiresAt',
+    name: 'expiry',
     stateMutability: 'view',
     inputs: [{ name: '', type: 'bytes4' }],
     outputs: [{ type: 'uint64' }],
@@ -294,6 +308,13 @@ export const PROQUINT_ABI = [
     stateMutability: 'view',
     inputs: [{ name: 'id', type: 'bytes4' }],
     outputs: [{ type: 'bool' }],
+  },
+  {
+    type: 'function',
+    name: 'getPrice',
+    stateMutability: 'view',
+    inputs: [{ name: 'id', type: 'bytes4' }, { name: 'yrs', type: 'uint8' }],
+    outputs: [{ type: 'uint256' }],
   },
 
   // ============ ERC-173 ============
@@ -370,7 +391,7 @@ export const PROQUINT_ABI = [
     inputs: [
       { name: 'user', type: 'address', indexed: true },
       { name: 'id', type: 'bytes4', indexed: true },
-      { name: 'inboxExpiry', type: 'uint64', indexed: false },
+      { name: 'inboxExpiry', type: 'uint64', indexed: true },
     ],
   },
   {

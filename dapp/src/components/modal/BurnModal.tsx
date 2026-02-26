@@ -5,12 +5,12 @@ import { txHashStyle } from '../utils/styles'
 import { explorerTxUrl } from '../../libs/config'
 import { PROQUINT_ABI } from '../../libs/abi/ERC721ABI'
 
-interface RefundModalProps {
+interface BurnModalProps {
   open: boolean
   onClose: () => void
   nameId: `0x${string}`
   proquintName: string
-  rewardAmount: number
+  refundAmount: number
   remainingMonths: number
 }
 
@@ -21,7 +21,7 @@ function formatEth(amount: number): string {
   return `${amount.toFixed(4)} ETH`
 }
 
-export function RefundModal({ open, onClose, nameId, proquintName, rewardAmount, remainingMonths }: RefundModalProps) {
+export function BurnModal({ open, onClose, nameId, proquintName, refundAmount, remainingMonths }: BurnModalProps) {
   const [error, setError] = useState<string | null>(null)
   
   const { address } = useAccount()
@@ -46,26 +46,66 @@ export function RefundModal({ open, onClose, nameId, proquintName, rewardAmount,
 
     setError(null)
 
-    // Use the specified burn function
     writeContract({
       address: CONTRACTS.ProquintNFT,
       abi: PROQUINT_ABI,
-      functionName: 'cleanInbox',
+      functionName: 'burn',
       args: [nameId],
     })
   }
 
   if (!open) return null
 
+  const overlayStyles: React.CSSProperties = {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+    padding: '1rem',
+  }
+
+  const modalStyles: React.CSSProperties = {
+    backgroundColor: 'var(--surface)',
+    borderRadius: '12px',
+    padding: '1.5rem',
+    maxWidth: '480px',
+    width: '100%',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+  }
+
+  const cardStyle: React.CSSProperties = {
+    padding: '1rem',
+    backgroundColor: 'var(--bg)',
+    borderRadius: '8px',
+    border: '1px solid var(--border)',
+    marginBottom: '1rem',
+  }
+
+  const errorStyles: React.CSSProperties = {
+    padding: '0.75rem',
+    backgroundColor: 'color-mix(in srgb, var(--danger) 10%, transparent)',
+    border: '1px solid color-mix(in srgb, var(--danger) 30%, transparent)',
+    borderRadius: '6px',
+    color: 'var(--danger)',
+    fontSize: '0.85rem',
+    marginBottom: '1rem',
+  }
+
   return (
     <div style={overlayStyles}>
       <div style={modalStyles}>
         <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--success)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
-            Clean Expired Inbox
+          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--danger)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
+            Burn Primary Name
           </div>
           <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0', color: 'var(--text)' }}>
-            Burn & Claim Reward
+            Burn & Get Refund
           </h2>
         </div>
 
@@ -74,13 +114,13 @@ export function RefundModal({ open, onClose, nameId, proquintName, rewardAmount,
             {proquintName.toUpperCase()}
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginBottom: '0.75rem' }}>
-            {remainingMonths > 1 ? 'Reward (50% of remaining value)' : 'Reward (1 month fixed)'}
+            Refund (100% of remaining value)
           </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--success)' }}>
-            {formatEth(rewardAmount)}
+          <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--accent)' }}>
+            {formatEth(refundAmount)}
           </div>
           <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', marginTop: '0.35rem' }}>
-            {remainingMonths > 1 ? `50% of ${remainingMonths} mo × 0.00003 ETH` : '1 mo × 0.00003 ETH (fixed reward)'}
+            {remainingMonths} mo × 0.00003 ETH
           </div>
         </div>
 
@@ -94,12 +134,7 @@ export function RefundModal({ open, onClose, nameId, proquintName, rewardAmount,
           color: 'var(--text-dim)',
           lineHeight: 1.5,
         }}>
-          <strong>Cleaning an expired inbox name:</strong> This inbox name has expired and can be burned by anyone.
-          {remainingMonths > 1 ? (
-            <> You'll receive 50% of the remaining registration value as a reward. The other 50% goes to the original owner.</>
-          ) : (
-            <> You'll receive a fixed reward of 1 month (0.00003 ETH). The owner receives nothing as less than 1 month remains.</>
-          )}
+          <strong>Burning your primary name:</strong> This will permanently burn your active primary name and refund you 100% of the remaining registration value. The name will become available for re-registration after the grace period.
         </div>
 
         {error && (
@@ -114,7 +149,7 @@ export function RefundModal({ open, onClose, nameId, proquintName, rewardAmount,
           }}>
             {isSuccess ? (
               <div style={{ color: 'var(--success)', fontWeight: 600, fontSize: '0.9rem' }}>
-                Cleaned Successfully
+                Burned Successfully
               </div>
             ) : (
               <div style={{ color: 'var(--text-dim)', fontSize: '0.85rem' }}>Confirming…</div>
@@ -132,51 +167,13 @@ export function RefundModal({ open, onClose, nameId, proquintName, rewardAmount,
           </button>
           <button
             onClick={handleConfirm}
-            style={{ flex: 1, backgroundColor: 'var(--success)', color: '#fff' }}
+            style={{ flex: 1, backgroundColor: 'var(--danger)', color: '#fff' }}
             disabled={isPending || !!hash}
           >
-            {isPending ? 'Processing…' : 'Clean & Claim'}
+            {isPending ? 'Processing…' : 'Burn'}
           </button>
         </div>
       </div>
     </div>
   )
-}
-
-const cardStyle: React.CSSProperties = {
-  backgroundColor: 'var(--bg-secondary)',
-  padding: '1rem',
-  borderRadius: '8px',
-  textAlign: 'center',
-}
-
-const overlayStyles: React.CSSProperties = {
-  position: 'fixed',
-  inset: 0,
-  backgroundColor: 'rgba(0, 0, 0, 0.75)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  zIndex: 1000,
-  padding: '1rem'
-}
-
-const modalStyles: React.CSSProperties = {
-  backgroundColor: 'var(--surface)',
-  borderRadius: '8px',
-  padding: '2rem',
-  maxWidth: '500px',
-  width: '100%',
-  boxShadow: '0 25px 80px rgba(0, 0, 0, 0.5)',
-  border: '1px solid var(--border)'
-}
-
-const errorStyles: React.CSSProperties = {
-  marginTop: '0.75rem',
-  padding: '0.75rem',
-  borderRadius: '6px',
-  backgroundColor: 'color-mix(in srgb, var(--danger) 10%, transparent)',
-  border: '1px solid color-mix(in srgb, var(--danger) 30%, transparent)',
-  color: 'var(--danger)',
-  fontSize: '0.9rem',
 }

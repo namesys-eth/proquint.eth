@@ -153,13 +153,13 @@ library LibProquint {
     }
 
     /**
-     * @notice Check if a proquint ID is symmetric (palindrome: both halves are identical).
+     * @notice Check if a proquint ID is a twin (palindrome: both halves are identical).
      * @param id Raw 4-byte proquint ID.
      * @return out True if `id[0:2] == id[2:4]` (byte-reversed).
      */
-    function isSymmetric(bytes4 id) internal pure returns (bool out) {
+    function isTwin(bytes4 id) internal pure returns (bool out) {
         assembly ("memory-safe") {
-            out := and(eq(byte(0, id), byte(3, id)), eq(byte(1, id), byte(2, id)))
+            out := and(eq(byte(0, id), byte(2, id)), eq(byte(1, id), byte(3, id)))
         }
     }
 

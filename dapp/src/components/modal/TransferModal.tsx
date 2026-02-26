@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { AddressInput } from '../utils/AddressInput'
+import { monoStyle, txHashStyle } from '../utils/styles'
 import { CONTRACTS } from '../../libs/contracts'
 import { explorerTxUrl } from '../../libs/config'
 import { PROQUINT_ABI } from '../../libs/abi/ERC721ABI'
@@ -106,41 +107,27 @@ export function TransferModal({ open, onClose, nameId, onBurnRequest, proquintNa
   return (
     <div style={overlayStyles}>
       <div style={modalStyles}>
-        <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
-          <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--accent)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            Transfer Inbox Name
+        <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
+            Transfer
           </div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 700, margin: '0.35rem 0', color: 'var(--text)', textTransform: 'uppercase' }}>
-            {proquintName ?? 'Pending Inbox Name'}
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0', color: 'var(--text)', textTransform: 'uppercase', ...monoStyle }}>
+            {proquintName ?? 'Inbox Name'}
           </h2>
-          <div style={{ fontFamily: '"SF Mono", Monaco, monospace', fontSize: '0.85rem', color: 'var(--text-dim)' }}>
-            {nameId} • Expires {formattedExpiry}
+          <div style={{ ...monoStyle, fontSize: '0.8rem', color: 'var(--text-dim)', marginTop: '0.25rem' }}>
+            Expires {formattedExpiry}
           </div>
-          <div style={{ width: '100%', height: '1px', backgroundColor: 'var(--border)', margin: '1rem auto', opacity: 0.5 }} />
-          <button
-            type="button"
-            onClick={() => {
-              onClose()
-              onBurnRequest()
-            }}
-            style={{
-              marginTop: '0.25rem',
-              padding: 0,
-              border: 'none',
-              background: 'none',
-              color: 'var(--accent)',
-              fontSize: '0.9rem',
-              cursor: 'pointer',
-              textDecoration: 'underline',
-            }}
-          >
-            Prefer to refund / burn this name?
-          </button>
         </div>
-        <p style={{ marginBottom: '1rem', lineHeight: 1.6, color: 'var(--text-dim)', fontSize: '0.9rem' }}>
-          Calls <code style={{ fontFamily: "'SF Mono', 'Monaco', monospace" }}>safeTransferFrom</code>. Name lands in the receiver's inbox — they must call <code style={{ fontFamily: "'SF Mono', 'Monaco', monospace" }}>acceptInbox</code> before the claim window expires.
-          Each transfer subtracts <strong style={{ color: 'var(--warning)' }}>7 days</strong> from expiry.
-        </p>
+
+        <div style={{
+          padding: '0.75rem', marginBottom: '1rem',
+          backgroundColor: 'var(--bg)', borderRadius: '6px',
+          border: '1px solid var(--border)',
+          fontSize: '0.85rem', color: 'var(--text-dim)', lineHeight: 1.5, textAlign: 'center',
+        }}>
+          Sends this name to another address's inbox.
+          <span style={{ color: 'var(--warning)' }}> 7-day penalty</span> subtracted from expiry.
+        </div>
 
         <div style={{ marginBottom: '1rem' }}>
           <AddressInput
@@ -155,85 +142,64 @@ export function TransferModal({ open, onClose, nameId, onBurnRequest, proquintNa
 
         {resolvedAddress && (
           <div style={resolvedStyles}>
-            ✓ Resolved to <span>{resolvedAddress}</span>
+            Resolved: <span>{resolvedAddress}</span>
           </div>
         )}
 
         {isZeroAddress && (
           <div style={warningStyles}>
-            Sending to <code>0x0</code> will permanently burn this inbox ID. You will be asked to confirm the burn instead of a transfer.
+            This will permanently burn the name instead of transferring.
           </div>
         )}
 
         {error && (
-          <div style={errorStyles}>
-            {error}
-          </div>
+          <div style={errorStyles}>{error}</div>
         )}
 
         {hash && (
           <div style={{
-            marginTop: '1rem',
-            padding: '1rem',
-            backgroundColor: 'var(--bg-secondary)',
-            borderRadius: '8px',
-            border: '1px solid var(--border)',
+            marginBottom: '1rem', padding: '0.75rem',
+            backgroundColor: 'var(--bg)', borderRadius: '6px',
+            border: '1px solid var(--border)', textAlign: 'center',
           }}>
             {isSuccess ? (
-              <div style={{ color: 'var(--accent)', marginBottom: '0.5rem', fontWeight: 600 }}>
-                ✓ Transfer Complete!
-              </div>
-            ) : isConfirming ? (
-              <div style={{ color: 'var(--text-dim)', marginBottom: '0.5rem' }}>
-                ⏳ Confirming transaction...
-              </div>
+              <div style={{ color: 'var(--success)', fontWeight: 600, fontSize: '0.9rem' }}>Transfer complete</div>
             ) : (
-              <div style={{ color: 'var(--text-dim)', marginBottom: '0.5rem' }}>
-                ⏳ Waiting for transaction...
-              </div>
+              <div style={{ color: 'var(--text-dim)', fontSize: '0.85rem' }}>Confirming…</div>
             )}
-            <a
-              href={explorerTxUrl(hash)}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                fontFamily: '"SF Mono", Monaco, monospace',
-                fontSize: '0.85rem',
-                color: 'var(--accent)',
-                wordBreak: 'break-all',
-                textDecoration: 'none',
-              }}
-            >
+            <a href={explorerTxUrl(hash)} target="_blank" rel="noopener noreferrer"
+              style={txHashStyle}>
               {hash}
             </a>
           </div>
         )}
 
-        <div style={{
-          marginTop: '1.5rem',
-          display: 'flex',
-          gap: '0.75rem',
-          flexWrap: 'wrap',
-        }}>
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
           {isSuccess ? (
-            <button onClick={onClose} style={{ flex: 1 }}>
-              Close
-            </button>
+            <button onClick={onClose} style={{ flex: 1 }}>Close</button>
           ) : (
             <>
               <button className="secondary" onClick={onClose} style={{ flex: 1 }} disabled={isPending}>
                 Cancel
               </button>
-              <button
-                onClick={handleConfirm}
-                style={{ flex: 1 }}
-                disabled={isPending || !!hash}
-              >
-                {isPending ? 'Processing...' : isZeroAddress ? 'Burn Instead' : 'Transfer'}
+              <button onClick={handleConfirm} style={{ flex: 1 }} disabled={isPending || !!hash}>
+                {isPending ? 'Processing…' : isZeroAddress ? 'Burn Instead' : 'Transfer'}
               </button>
             </>
           )}
         </div>
+
+        {!hash && (
+          <div style={{ textAlign: 'center', marginTop: '0.75rem' }}>
+            <button
+              type="button"
+              onClick={() => { onClose(); onBurnRequest() }}
+              style={{ padding: 0, border: 'none', background: 'none', color: 'var(--text-dim)', fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'underline' }}
+            >
+              Refund instead?
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -261,7 +227,7 @@ const modalStyles: React.CSSProperties = {
 }
 
 const resolvedStyles: React.CSSProperties = {
-  fontFamily: '"SF Mono", Monaco, monospace',
+  ...monoStyle,
   fontSize: '0.85rem',
   color: 'var(--primary)',
 }

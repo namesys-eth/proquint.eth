@@ -26,8 +26,8 @@ contract LibProquintMock {
         return LibProquint.normalize(id);
     }
 
-    function isSymmetric(bytes4 id) external pure returns (bool) {
-        return LibProquint.isSymmetric(id);
+    function isTwin(bytes4 id) external pure returns (bool) {
+        return LibProquint.isTwin(id);
     }
 
     function hashID(bytes4 id) external pure returns (bytes11, bytes32) {
@@ -141,22 +141,22 @@ contract LibProquintTest is Test {
         assertEq(mock.normalize(id1), mock.normalize(id2));
     }
 
-    // ── isSymmetric ─────────────────────────────────────────────────
+    // ── isTwin ─────────────────────────────────────────────────
 
-    function test_isSymmetric_true() public view {
-        assertTrue(mock.isSymmetric(bytes4(0x01020201)));
+    function test_isTwin_true() public view {
+        assertTrue(mock.isTwin(bytes4(0x01020102)));
     }
 
-    function test_isSymmetric_zero() public view {
-        assertTrue(mock.isSymmetric(bytes4(0x00000000)));
+    function test_isTwin_zero() public view {
+        assertTrue(mock.isTwin(bytes4(0x00000000)));
     }
 
-    function test_isSymmetric_false() public view {
-        assertFalse(mock.isSymmetric(bytes4(0x01020304)));
+    function test_isTwin_false() public view {
+        assertFalse(mock.isTwin(bytes4(0x01020304)));
     }
 
-    function test_isSymmetric_half_match() public view {
-        assertFalse(mock.isSymmetric(bytes4(0x01030201)));
+    function test_isTwin_half_match() public view {
+        assertFalse(mock.isTwin(bytes4(0x01030201)));
     }
 
     // ── namehash / hashID ───────────────────────────────────────────
