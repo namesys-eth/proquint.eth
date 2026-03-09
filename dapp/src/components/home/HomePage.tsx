@@ -28,8 +28,8 @@ function useSlotMachine(intervalMs = 6000) {
     const name = generateRandomProquint()
     try { return proquintToBytes4(name) } catch { return '0x00000000' }
   })
-  const targetRef = useRef<string[]>(display)
-  const timerRef = useRef<ReturnType<typeof setTimeout>>()
+  const targetRef = useRef<string[]>([])
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   const startSpin = useCallback(() => {
     const name = generateRandomProquint()

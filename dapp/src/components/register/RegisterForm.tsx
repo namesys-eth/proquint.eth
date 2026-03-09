@@ -5,13 +5,13 @@ import { TransactionStatus } from './TransactionStatus'
 import { CommitmentWaiting } from './CommitmentWaiting'
 import { CONTRACTS } from '../../libs/contracts'
 import { PROQUINT_ABI } from '../../libs/abi/ERC721ABI'
-import { validateProquint, proquintToBytes4, calculatePrice, isTwin, bytes4ToProquint, generateRandomBytes, formatPrice } from '../../libs/proquint'
+import { validateProquint, proquintToBytes4, calculatePrice, isTwin, bytes4ToProquint, generateRandomBytes } from '../../libs/proquint'
 import { createCommitment, saveCommitment, checkCommitmentAge } from '../../libs/commitment'
 import { useAvailability } from '../../hooks/useAvailability'
 
 const ZERO_ID = '0x00000000'
 
-type Step = 'setup' | 'commit' | 'wait' | 'register' | 'success'
+type Step = 'setup' | 'commit' | 'wait' | 'register'
 
 export function RegisterForm() {
   const { address } = useAccount()
@@ -131,11 +131,14 @@ export function RegisterForm() {
     }
   }, [error])
 
-  useEffect(() => {
-    if (isSuccess && step === 'register') {
-      setStep('success')
-    }
-  }, [isSuccess, step])
+  const resetToSetup = () => {
+    setStep('setup')
+    setProquint('')
+    setCommitmentData(null)
+    setCommitTxConfirmed(false)
+    setCommitTxHash(null)
+    reset()
+  }
 
   const handleCommit = async () => {
     if (!address || !proquint || !validateProquint(proquint)) return
@@ -327,62 +330,9 @@ export function RegisterForm() {
           receiverInput={receiver}
           userAddress={address}
           onCancel={() => { setStep('setup'); setCommitmentData(null); setCommitTxConfirmed(false); }}
+          onViewName={proquint ? () => { window.location.href = `/${proquint}` } : undefined}
+          onRegisterAnother={resetToSetup}
         />
-      )}
-
-      {step === 'success' && (
-        <div className="card" style={{ textAlign: 'center' }}>
-          <div style={{ padding: '1.5rem 0 1rem' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>🎉</div>
-            <div style={{
-              fontFamily: "'SF Mono', 'Monaco', monospace",
-              fontSize: 'clamp(1.8rem, 6vw, 2.8rem)',
-              fontWeight: 800,
-              color: 'var(--accent)',
-              textTransform: 'uppercase',
-              letterSpacing: '-0.01em',
-              lineHeight: 1.1,
-              marginBottom: '0.2rem',
-            }}>
-              {proquint?.toUpperCase()}
-            </div>
-            {normalizedId && (
-              <div style={{ fontFamily: "'SF Mono', 'Monaco', monospace", fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: '1rem' }}>
-                {normalizedId}
-              </div>
-            )}
-          </div>
-
-          {price && years && (
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', marginBottom: '1.5rem', fontSize: '0.8rem', color: 'var(--text-dim)' }}>
-              <span>{years} {years === 1 ? 'year' : 'years'}</span>
-              <span>{formatPrice(price)} ETH</span>
-            </div>
-          )}
-
-          <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button
-              onClick={() => window.location.href = `/${proquint}`}
-              style={{ minWidth: '140px' }}
-            >
-              View Name
-            </button>
-            <button
-              className="secondary"
-              onClick={() => {
-                setStep('setup')
-                setProquint('')
-                setCommitmentData(null)
-                setCommitTxConfirmed(false)
-                setCommitTxHash(null)
-                reset()
-              }}
-              style={{ minWidth: '140px' }}
-            >
-              Register Another
-            </button>
-          </div>
-        </div>
       )}
     </div>
   )

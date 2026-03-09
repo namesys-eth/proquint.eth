@@ -1,7 +1,7 @@
 import { formatPrice } from '../../libs/proquint'
 import { explorerTxUrl, explorerAddressUrl } from '../../libs/config'
 import { StepIndicator } from '../utils/StepIndicator'
-import { IdenticonWithName } from '../utils/IdenticonWithName'
+import { Identicon } from '../utils/Identicon'
 import { monoStyle } from '../utils/styles'
 
 interface CommitmentWaitingProps {
@@ -41,12 +41,12 @@ export function CommitmentWaiting({
   const identiconAddress = userAddress || '0x0000000000000000000000000000000000000000'
 
   // Step states: commit is always completed at this stage, register is active when ready
-  const steps = [
-    { id: 'commit', label: 'Committed', state: 'completed' as const },
+  const steps: { id: string; label: string; state: 'completed' | 'active' | 'pending' }[] = [
+    { id: 'commit', label: 'Committed', state: 'completed' },
     { 
       id: 'register', 
       label: 'Register', 
-      state: canRegister ? 'active' : 'pending' as const
+      state: canRegister ? 'active' : 'pending'
     },
   ]
 
@@ -59,11 +59,11 @@ export function CommitmentWaiting({
 
       {/* Identicon with proquint overlay */}
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
-        <IdenticonWithName
+        <Identicon
           address={identiconAddress}
           proquintId={normalizedId as `0x${string}` | undefined}
-          proquint={proquint}
           size={200}
+          overlayLabel={proquint}
         />
       </div>
 
@@ -154,7 +154,7 @@ export function CommitmentWaiting({
       <div className="actions" style={{ justifyContent: 'center' }}>
         <button className="secondary" onClick={onCancel} style={{ fontSize: '1rem' }}>Cancel</button>
         <button onClick={onRegister} disabled={!canRegister || isPending} style={{ fontSize: '1.05rem', padding: '0.9rem 1.5rem' }}>
-          {isPending ? 'Registering…' : 'Register Now'}
+          {isPending ? 'Registering…' : 'Register'}
         </button>
       </div>
 

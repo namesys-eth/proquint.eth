@@ -54,6 +54,7 @@ export function RegistrationSetup({
   inboxCount = 0,
   userPrimaryId,
 }: RegistrationSetupProps) {
+  const identiconSize = 200
   const [mintToSelf, setMintToSelf] = useState(true)
   const [receiverInboxCount, setReceiverInboxCount] = useState<number>(0)
   const [resolvedReceiver, setResolvedReceiver] = useState<string | null>(null)
@@ -176,27 +177,17 @@ export function RegistrationSetup({
         {/* Identicon */}
         {address && (
           <div className="registration-identicon">
-            <div style={{ position: 'relative', width: '100%', maxWidth: '240px' }}>
+            <div style={{ position: 'relative', width: '100%', maxWidth: '200px' }}>
               {!mintToSelf && isResolving ? (
-                <div style={{ width: '240px', height: '240px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--surface)', borderRadius: '0.5rem', border: '1px solid var(--border)' }}>
+                <div style={{ width: '200px', height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--surface)', borderRadius: '0.5rem', border: '1px solid var(--border)' }}>
                   <span style={{ fontSize: '2rem' }}>⏳</span>
                 </div>
               ) : (
-                <Identicon address={!mintToSelf && resolvedReceiver ? resolvedReceiver : address} size={240} />
-              )}
-              {proquint && (
-                <div style={{
-                  position: 'absolute', bottom: 0, left: 0, right: 0,
-                  padding: '0.4rem 3%',
-                  backgroundColor: 'rgba(0,0,0,0.6)', color: 'white',
-                  fontSize: proquint.length > 11 ? '1rem' : '1.3rem',
-                  fontWeight: 700, textAlign: 'center',
-                  borderBottomLeftRadius: '0.5rem', borderBottomRightRadius: '0.5rem',
-                  textTransform: 'uppercase', letterSpacing: '0.03em',
-                  ...monoStyle, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
-                }}>
-                  {proquint}
-                </div>
+                <Identicon
+                  address={!mintToSelf && resolvedReceiver ? resolvedReceiver : address}
+                  size={identiconSize}
+                  overlayLabel={proquint || undefined}
+                />
               )}
             </div>
           </div>
@@ -271,7 +262,7 @@ export function RegistrationSetup({
           <ToggleButtons
             options={[
               { value: 'self', label: 'Self' },
-              { value: 'other', label: 'Another' },
+              { value: 'other', label: 'Other' },
             ]}
             value={mintToSelf ? 'self' : 'other'}
             onChange={(v) => setMintToSelf(v === 'self')}
@@ -293,7 +284,17 @@ export function RegistrationSetup({
             placeholder="0x… / name.eth / cvcvc-cvcvc"
             value={receiver}
             onChange={(e) => setReceiver(e.target.value)}
-            style={{ ...monoStyle, fontSize: '0.9rem' }}
+            style={{
+              ...monoStyle,
+              width: '100%',
+              maxWidth: '100%',
+              minWidth: 0,
+              fontSize: '0.85rem',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              boxSizing: 'border-box',
+            }}
             title="Ethereum address, ENS name, or proquint name"
           />
         )}
@@ -381,7 +382,7 @@ export function RegistrationSetup({
           disabled={!canCommit || isPending || isConfirming}
           style={{ width: '100%', fontWeight: 600, fontSize: '1.05rem', padding: '0.9rem 1.5rem' }}
         >
-          {isPending || isConfirming ? 'Committing…' : isAvailable ? 'Commit Registration' : 'Not Available'}
+          {isPending || isConfirming ? 'Committing…' : isAvailable ? 'Commit' : 'Unavailable'}
         </button>
       </div>
     </div>

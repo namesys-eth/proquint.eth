@@ -16,7 +16,7 @@ export function ShelveModal({ open, onClose, nameId, proquintName }: ShelveModal
   const [error, setError] = useState<string | null>(null)
   const { address } = useAccount()
   const { writeContract, data: hash, isPending, error: writeError } = useWriteContract()
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash })
+  const { isSuccess } = useWaitForTransactionReceipt({ hash })
 
   useEffect(() => {
     if (writeError) setError(writeError.message)

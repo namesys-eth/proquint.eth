@@ -26,7 +26,7 @@ export function BurnModal({ open, onClose, nameId, proquintName, refundAmount, r
   
   const { address } = useAccount()
   const { writeContract, data: hash, isPending, error: writeError } = useWriteContract()
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
+  const { isSuccess } = useWaitForTransactionReceipt({
     hash,
   })
 

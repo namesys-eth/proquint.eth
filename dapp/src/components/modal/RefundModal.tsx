@@ -26,7 +26,7 @@ export function RefundModal({ open, onClose, nameId, proquintName, rewardAmount,
   
   const { address } = useAccount()
   const { writeContract, data: hash, isPending, error: writeError } = useWriteContract()
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
+  const { isSuccess } = useWaitForTransactionReceipt({
     hash,
   })
 

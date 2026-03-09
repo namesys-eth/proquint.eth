@@ -1,3 +1,5 @@
+import { compactButtonStyle } from './styles'
+
 interface Action {
   label: string
   onClick: () => void
@@ -20,8 +22,7 @@ export function ActionButtons({ actions, style }: ActionButtonsProps) {
           className={action.variant === 'secondary' ? 'secondary' : undefined}
           disabled={action.disabled}
           style={{
-            fontSize: '1rem',
-            padding: '0.85rem 1.5rem',
+            ...compactButtonStyle,
             ...(action.variant === 'danger' && {
               backgroundColor: 'var(--danger)',
               color: '#fff'

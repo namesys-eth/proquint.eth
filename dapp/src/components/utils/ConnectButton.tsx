@@ -53,7 +53,7 @@ export function ConnectButton() {
               if (!connected) {
                 return (
                   <button onClick={openConnectModal} type="button">
-                    Connect Wallet
+                    Connect
                   </button>
                 )
               }
@@ -61,15 +61,21 @@ export function ConnectButton() {
               if (chain.unsupported) {
                 return (
                   <button onClick={openChainModal} type="button">
-                    Wrong network
+                    Network
                   </button>
                 )
               }
 
               return (
-                <button onClick={openAccountModal} type="button" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <button
+                  onClick={openAccountModal}
+                  type="button"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0, maxWidth: '100%' }}
+                >
                   <Identicon address={account.address} proquintId={primaryId && primaryId !== '0x00000000' ? (primaryId as `0x${string}`) : undefined} size={24} />
-                  {proquintName ? proquintName.toUpperCase() : `${account.address.slice(0, 6)}...${account.address.slice(-4)}`}
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
+                    {proquintName ? proquintName.toUpperCase() : `${account.address.slice(0, 6)}...${account.address.slice(-4)}`}
+                  </span>
                 </button>
               )
             })()}

@@ -12,9 +12,10 @@ interface IdenticonProps {
   proquintId?: `0x${string}` | null
   size?: number
   onImageTypeChange?: (hasTokenImage: boolean) => void
+  overlayLabel?: string
 }
 
-export function Identicon({ address, proquintId, size = 40, onImageTypeChange }: IdenticonProps) {
+export function Identicon({ address, proquintId, size = 40, onImageTypeChange, overlayLabel }: IdenticonProps) {
   const normalizedId = useMemo(() => {
     if (!proquintId || proquintId === '0x00000000') return null
     try {
@@ -96,10 +97,11 @@ export function Identicon({ address, proquintId, size = 40, onImageTypeChange }:
 
   const src = imageSrc ?? fallback
   const alt = imageSrc ? 'proquint token' : 'identicon'
+  const hasOverlay = !!overlayLabel
 
   if (!src) return null
 
-  return (
+  const image = (
     <img
       src={src}
       alt={alt}
@@ -112,6 +114,44 @@ export function Identicon({ address, proquintId, size = 40, onImageTypeChange }:
         objectFit: 'cover',
       }}
     />
+  )
+
+  if (!hasOverlay) return image
+
+  return (
+    <div
+      style={{
+        position: 'relative',
+        width: '100%',
+        maxWidth: `${size}px`,
+        margin: '0 auto',
+      }}
+    >
+      {image}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          padding: '0.35rem 3%',
+          backgroundColor: 'rgba(0,0,0,0.7)',
+          color: 'white',
+          fontSize: overlayLabel.length > 11 ? '0.9rem' : '1.1rem',
+          fontWeight: 700,
+          textAlign: 'center',
+          borderBottomLeftRadius: '0.5rem',
+          borderBottomRightRadius: '0.5rem',
+          letterSpacing: '0.03em',
+          fontFamily: "'SF Mono', 'Monaco', monospace",
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }}
+      >
+        {overlayLabel.toUpperCase()}
+      </div>
+    </div>
   )
 }
 

@@ -41,7 +41,10 @@ function AppContent() {
     <div className="app">
       <header>
         <div className="header-content">
-          <h1>ProQuint.eth</h1>
+          <a href="/" className="logo-link" onClick={(e) => { e.preventDefault(); navigate('/') }}>
+            <img src="/pq.svg" alt="ProQuint.eth" className="logo" />
+            <span className="logo-text">ProQuint.eth</span>
+          </a>
           <button className="menu-toggle" onClick={() => setNavOpen((v) => !v)} aria-label="Toggle navigation">
             ☰
           </button>

@@ -1,7 +1,7 @@
 import { formatPrice } from '../../libs/proquint'
 import { explorerAddressUrl } from '../../libs/config'
 import { StepIndicator } from '../utils/StepIndicator'
-import { IdenticonWithName } from '../utils/IdenticonWithName'
+import { Identicon } from '../utils/Identicon'
 import { Confetti } from '../utils/Confetti'
 import { monoStyle } from '../utils/styles'
 
@@ -17,6 +17,8 @@ interface TransactionStatusProps {
   receiverInput?: string
   userAddress?: string
   onCancel?: () => void
+  onViewName?: () => void
+  onRegisterAnother?: () => void
 }
 
 export function TransactionStatus({
@@ -31,6 +33,8 @@ export function TransactionStatus({
   receiverInput,
   userAddress,
   onCancel,
+  onViewName,
+  onRegisterAnother,
 }: TransactionStatusProps) {
   const showReceiver = receiverAddress && receiverAddress !== ''
   const displayReceiver = receiverInput || receiverAddress
@@ -39,16 +43,16 @@ export function TransactionStatus({
   // Step indicator logic:
   // - In 'commit' step: commit is "active" while confirming, "completed" after success
   // - In 'register' step: commit is "completed", register is "active" while confirming, "completed" after success
-  const steps = [
+  const steps: { id: string; label: string; state: 'completed' | 'active' | 'pending' }[] = [
     { 
       id: 'commit', 
       label: 'Committed', 
-      state: (step === 'commit' && !isSuccess) ? 'active' : 'completed' as const 
+      state: (step === 'commit' && !isSuccess) ? 'active' : 'completed'
     },
     { 
       id: 'register', 
       label: 'Register', 
-      state: step === 'register' ? (isSuccess ? 'completed' : 'active') : 'pending' as const
+      state: step === 'register' ? (isSuccess ? 'completed' : 'active') : 'pending'
     },
   ]
   return (
@@ -62,11 +66,11 @@ export function TransactionStatus({
       {proquint && (
         <>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
-            <IdenticonWithName 
+            <Identicon
               address={identiconAddress} 
               proquintId={normalizedId as `0x${string}` | undefined}
-              proquint={proquint}
               size={200}
+              overlayLabel={proquint}
             />
           </div>
 
@@ -182,6 +186,17 @@ export function TransactionStatus({
       {onCancel && !isSuccess && (
         <div className="actions" style={{ justifyContent: 'center' }}>
           <button className="secondary" onClick={onCancel} style={{ fontSize: '1rem' }}>Cancel</button>
+        </div>
+      )}
+
+      {isSuccess && step === 'register' && (
+        <div className="actions" style={{ justifyContent: 'center' }}>
+          <button onClick={onViewName} disabled={!onViewName}>
+            View Name
+          </button>
+          <button className="secondary" onClick={onRegisterAnother} disabled={!onRegisterAnother}>
+            Register New
+          </button>
         </div>
       )}
     </div>

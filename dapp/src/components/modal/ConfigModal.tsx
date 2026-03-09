@@ -49,10 +49,6 @@ const labelStyle: React.CSSProperties = {
   letterSpacing: '0.05em',
 }
 
-const inputStyle: React.CSSProperties = {
-  ...sharedInputStyle,
-}
-
 export function ConfigModal({ open, onClose }: ConfigModalProps) {
   const [cfg, setCfg] = useState<AppConfig>(loadConfig)
   const [saved, setSaved] = useState(false)
@@ -196,19 +192,19 @@ export function ConfigModal({ open, onClose }: ConfigModalProps) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', marginBottom: '1rem' }}>
               <div>
                 <label style={labelStyle}>Chain ID</label>
-                <input type="number" value={cfg.chainId} onChange={e => update({ chainId: Number(e.target.value) || 1 })} style={inputStyle} />
+                <input type="number" value={cfg.chainId} onChange={e => update({ chainId: Number(e.target.value) || 1 })} style={sharedInputStyle} />
               </div>
               <div>
                 <label style={labelStyle}>RPC Endpoint</label>
-                <input type="text" value={cfg.rpcUrl} onChange={e => update({ rpcUrl: e.target.value })} placeholder="(default)" style={inputStyle} />
+                <input type="text" value={cfg.rpcUrl} onChange={e => update({ rpcUrl: e.target.value })} placeholder="(default)" style={sharedInputStyle} />
               </div>
               <div>
                 <label style={labelStyle}>Explorer URL</label>
-                <input type="text" value={cfg.explorerUrl} onChange={e => update({ explorerUrl: e.target.value })} placeholder="https://etherscan.io" style={inputStyle} />
+                <input type="text" value={cfg.explorerUrl} onChange={e => update({ explorerUrl: e.target.value })} placeholder="https://etherscan.io" style={sharedInputStyle} />
               </div>
               <div>
                 <label style={labelStyle}>Contract Address</label>
-                <input type="text" value={cfg.contractAddress} onChange={e => update({ contractAddress: e.target.value })} placeholder="0x..." style={inputStyle} />
+                <input type="text" value={cfg.contractAddress} onChange={e => update({ contractAddress: e.target.value })} placeholder="0x..." style={sharedInputStyle} />
               </div>
             </div>
 

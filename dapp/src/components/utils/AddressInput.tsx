@@ -122,6 +122,9 @@ export function AddressInput({ value, onChange, placeholder, currentAddress, sho
           style={{ 
             fontFamily: "'SF Mono', 'Monaco', monospace",
             width: '100%',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
             ...styleOverrides,
           }}
         />

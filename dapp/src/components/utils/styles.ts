@@ -1,19 +1,9 @@
 // Common style constants to avoid duplication across components
 
-export const MONO_FONT = "'SF Mono', 'Monaco', monospace"
+export const MONO_FONT = "var(--mono-font), 'SF Mono', 'Monaco', monospace"
 
 export const monoStyle: React.CSSProperties = {
   fontFamily: MONO_FONT
-}
-
-export const proquintNameStyle: React.CSSProperties = {
-  fontFamily: MONO_FONT,
-  fontSize: 'clamp(1.4rem, 5vw, 2rem)',
-  fontWeight: 800,
-  color: 'var(--accent)',
-  textTransform: 'uppercase',
-  letterSpacing: '-0.01em',
-  lineHeight: 1.1,
 }
 
 export const addressStyle: React.CSSProperties = {
@@ -37,4 +27,11 @@ export const inputStyle: React.CSSProperties = {
   fontSize: '0.85rem',
   padding: '0.6rem',
   width: '100%',
+}
+
+export const compactButtonStyle: React.CSSProperties = {
+  padding: '0.75rem 1.1rem',
+  fontSize: '0.98rem',
+  minWidth: 'auto',
+  minHeight: '44px',
 }

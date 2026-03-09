@@ -6,7 +6,7 @@ import { TransferModal } from '../modal/TransferModal'
 import { RefundModal } from '../modal/RefundModal'
 import { ShelveModal } from '../modal/ShelveModal'
 import { bytes4ToProquint } from '../../libs/proquint'
-import { monoStyle } from '../utils/styles'
+import { monoStyle, compactButtonStyle } from '../utils/styles'
 
 interface InboxStatusSectionProps {
   nameId: `0x${string}`
@@ -18,6 +18,7 @@ interface InboxStatusSectionProps {
   canClaimOnBehalf: boolean      // anyone period active
   canBurn: boolean               // burn period active
   expiryTimestamp?: bigint       // registration expiry
+  onBurnClick?: () => void       // callback for burn button
 }
 
 function useCountdown(targetTs: number): string {
@@ -55,6 +56,7 @@ export function InboxStatusSection({
   canClaimOnBehalf,
   canBurn,
   expiryTimestamp,
+  onBurnClick,
 }: InboxStatusSectionProps) {
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false)
   const [showBurnModal, setShowBurnModal] = useState(false)
@@ -68,6 +70,8 @@ export function InboxStatusSection({
   // Countdowns
   const receiverCountdown = useCountdown(inboxExpiryTs)
   const anyoneCountdown = useCountdown(anyoneEnd)
+  const openClaimCountdown = canClaim ? receiverCountdown : anyoneCountdown
+  const openClaimDate = canClaim ? inboxExpiryTs : anyoneEnd
 
   const handleClaim = () => {
     // Use acceptInbox if owner, acceptInboxOnBehalf if claiming on behalf
@@ -163,10 +167,10 @@ export function InboxStatusSection({
             Open Claim
           </div>
           <div style={{ ...monoStyle, fontSize: '1.1rem', fontWeight: 700, color: canClaimOnBehalf ? 'var(--warning)' : 'var(--text-dim)', marginBottom: '0.2rem' }}>
-            {canClaim ? 'Waiting' : anyoneCountdown}
+            {canClaim || canClaimOnBehalf ? openClaimCountdown : 'Expired'}
           </div>
           <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>
-            {formatDate(anyoneEnd)}
+            {formatDate(openClaimDate)}
           </div>
         </div>
 
@@ -175,7 +179,7 @@ export function InboxStatusSection({
             Burnable
           </div>
           <div style={{ ...monoStyle, fontSize: '1.1rem', fontWeight: 700, color: canBurn ? 'var(--danger)' : 'var(--text-dim)', marginBottom: '0.2rem' }}>
-            {canBurn ? 'Now' : 'Waiting'}
+            {canBurn ? 'Now' : anyoneCountdown}
           </div>
           <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>
             {formatDate(anyoneEnd)}
@@ -183,46 +187,59 @@ export function InboxStatusSection({
         </div>
       </div>
 
-      {/* Actions */}
-      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+      {/* Actions - compact inline buttons */}
+      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'nowrap', justifyContent: 'center' }}>
         {isInboxOwner ? (
           <>
             {ownerHasPrimary ? (
               <button
                 onClick={() => setShowShelveModal(true)}
                 disabled={isPending}
-                style={{ flex: '1 1 auto' }}
-                title="Shelve primary to inbox (7d penalty), then claim this name"
+                style={compactButtonStyle}
+                title="Shelve primary to inbox"
               >
-                {isPending ? 'Processing…' : 'Shelve Primary'}
+                {isPending ? '…' : 'Shelve'}
               </button>
             ) : (
               <button
                 onClick={handleClaim}
                 disabled={!ownerCanClaim || isPending}
-                style={{ flex: '1 1 auto' }}
+                style={compactButtonStyle}
                 title={!canClaim ? 'Claim period not active' : 'Accept as your primary'}
               >
-                {isPending ? 'Processing…' : 'Claim as Primary'}
+                {isPending ? '…' : 'Claim'}
               </button>
             )}
             <button
               onClick={() => setIsTransferModalOpen(true)}
               disabled={isPending}
               className="secondary"
-              style={{ flex: '1 1 auto' }}
+              style={compactButtonStyle}
             >
               Transfer
             </button>
+            {onBurnClick && (
+              <button
+                onClick={onBurnClick}
+                disabled={isPending}
+                style={{ 
+                  ...compactButtonStyle,
+                  backgroundColor: 'var(--danger)',
+                  color: '#fff'
+                }}
+              >
+                Burn
+              </button>
+            )}
           </>
         ) : (
           <button
             onClick={handleClaim}
             disabled={!othersCanClaim || isPending}
-            style={{ flex: '1 1 auto' }}
-            title={ownerHasPrimary ? 'Owner has a primary — cannot accept' : !canClaimOnBehalf ? '7d open claim not active yet' : 'Accept on behalf — owner gets this as primary'}
+            style={compactButtonStyle}
+            title={ownerHasPrimary ? 'Owner has a primary — cannot accept' : !canClaimOnBehalf ? '7d open claim not active yet' : 'Accept on behalf'}
           >
-            {isPending ? 'Processing…' : 'Claim On Behalf'}
+            {isPending ? '…' : 'Claim On Behalf'}
           </button>
         )}
       </div>
@@ -238,25 +255,14 @@ export function InboxStatusSection({
         </div>
       )}
 
-      {isInboxOwner ? (
-        <RefundModal
-          open={showBurnModal}
-          onClose={() => setShowBurnModal(false)}
-          nameId={nameId}
-          proquintName={proquintName}
-          rewardAmount={refundReward.amount}
-          remainingMonths={refundReward.remainingMonths}
-        />
-      ) : (
-        <RefundModal
-          open={showBurnModal}
-          onClose={() => setShowBurnModal(false)}
-          nameId={nameId}
-          proquintName={proquintName}
-          rewardAmount={refundReward.amount}
-          remainingMonths={refundReward.remainingMonths}
-        />
-      )}
+      <RefundModal
+        open={showBurnModal}
+        onClose={() => setShowBurnModal(false)}
+        nameId={nameId}
+        proquintName={proquintName}
+        rewardAmount={refundReward.amount}
+        remainingMonths={refundReward.remainingMonths}
+      />
 
       <TransferModal
         open={isTransferModalOpen}

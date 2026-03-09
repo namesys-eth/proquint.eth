@@ -4,10 +4,77 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/pq.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Proquint Name System</title>
+    <meta name="description" content="Proquint.eth - human-readable CVCVC-CVCVC names on Ethereum with commit-reveal registration and inbox lifecycle." />
+    <meta name="theme-color" content="#111113" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Proquint.eth" />
+    <meta property="og:description" content="Human-readable proquint names on Ethereum." />
+    <meta property="og:image" content="/pq.svg" />
+    <meta property="og:url" content="https://proquint.eth" />
+
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Proquint.eth" />
+    <meta name="twitter:description" content="Human-readable proquint names on Ethereum." />
+    <meta name="twitter:image" content="/pq.svg" />
+
+    <title>Proquint.eth</title>
+
+    <style>
+      html, body, #root {
+        margin: 0;
+        padding: 0;
+        min-height: 100%;
+        background: #111113;
+      }
+
+      .boot-loader {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.85rem;
+        background: #111113;
+        color: #8b8b96;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      }
+
+      .boot-loader svg {
+        width: 56px;
+        height: 56px;
+      }
+
+      .boot-loader svg path {
+        stroke-dasharray: 720;
+        stroke-dashoffset: 720;
+        animation: boot-path 2.4s ease-in-out infinite;
+      }
+
+      @keyframes boot-path {
+        0% { stroke-dashoffset: 720; opacity: 0.35; }
+        50% { stroke-dashoffset: 0; opacity: 1; }
+        100% { stroke-dashoffset: -720; opacity: 0.45; }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="boot-loader">
+        <svg viewBox="0 0 264.583 369.291" role="img" aria-label="Loading Proquint.eth">
+          <path
+            fill="#c19643"
+            stroke="#74041a"
+            stroke-width="6.302"
+            d="m118.39 195.386-.007 121.22 86.083-29.251.005-60.606-28.69 9.75-.003 30.303-28.691 9.75.005-90.918zm-.005 60.605-86.083 29.251-.001 30.303 28.691-9.75.002-30.303 28.691-9.75-.005 60.606-86.083 29.25.004-90.916 114.775-39zm57.389-49.807 28.691-9.75.005-90.917-28.691 9.75zm-28.694 40.052 114.775-39 .005-90.917-57.383 19.5-.002 30.302 28.692-9.75-.002 30.303-86.084 29.25zm.01-151.522 86.083-29.251.002-30.303-28.692 9.75-.002 30.303-28.691 9.75.005-60.606 86.083-29.251-.004 90.917-114.775 39zm-28.7 70.36.005-90.917-28.691 9.75-.002 30.303-28.692 9.75.005-60.606 86.083-29.251-.006 121.22zm.002-30.303L32.31 164.022l-.001 30.303 28.691-9.75-.001 30.303-57.383 19.5.004-90.918 114.775-39Zm57.384 41.11.002-30.303-86.083 29.251-.002 30.303zM61 245.184l28.691-9.75.005-90.917-28.691 9.75z"
+            opacity=".9"
+            style="mix-blend-mode:normal"
+            transform="translate(-.446 9.293)"
+          ></path>
+        </svg>
+        <div>Loading Proquint.eth…</div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

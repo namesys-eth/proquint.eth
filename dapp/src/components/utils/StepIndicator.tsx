@@ -1,4 +1,4 @@
-interface Step {
+export interface Step {
   id: string
   label: string
   state: 'completed' | 'active' | 'pending'

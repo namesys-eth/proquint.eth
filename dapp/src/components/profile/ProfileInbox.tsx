@@ -1,19 +1,25 @@
 import { useAccount, useReadContract } from 'wagmi'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { CONTRACTS, CONSTANTS } from '../../libs/contracts'
 import { PROQUINT_ABI } from '../../libs/abi/ERC721ABI'
 import { proquintToBytes4 } from '../../libs/proquint'
 import { ProfileSearchBar } from './ProfileSearchBar'
-import { Identicon } from '../utils/Identicon'
+import { ProfileHero } from './ProfileHero'
 import { InboxStatusSection } from './InboxStatusSection'
+import { ProfileInboxItemsSection } from './ProfileInboxItemsSection'
+import { ProfileActivity } from './ProfileActivity'
 import { TransferModal } from '../modal/TransferModal'
 import { BurnModal } from '../modal/BurnModal'
 import { RejectModal } from '../modal/RejectModal'
 import { RefundModal } from '../modal/RefundModal'
 import { ExtendModal } from '../modal/ExtendModal'
 import { ActionButtons } from '../utils/ActionButtons'
-import { monoStyle } from '../utils/styles'
+import { compactButtonStyle } from '../utils/styles'
+import { LoadingState } from '../utils/LoadingState'
+import { formatTimeRemaining } from '../utils/time'
+import { useInboxItems } from '../../hooks/useInboxItems'
+import { useEvents } from '../../hooks/EventIndexerContext'
 
 export function ProfileInbox() {
   const { param: urlParam } = useParams<{ param: string }>()
@@ -55,60 +61,17 @@ export function ProfileInbox() {
     query: { enabled: !!proquintOwner },
   })
 
-  const formatDate = (timestamp?: bigint | number | null) => {
-    if (timestamp === undefined || timestamp === null) return '—'
-    const value = typeof timestamp === 'bigint' ? Number(timestamp) : timestamp
-    if (value === 0) return '—'
-    const date = new Date(value * 1000)
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
-
-  // Smart time formatting: years/days, or days/hours if < 1 week
-  const formatTimeRemaining = (targetTimestamp?: bigint | number | null): { main: string; sub: string } => {
-    if (targetTimestamp === undefined || targetTimestamp === null) return { main: '—', sub: '' }
-    const target = typeof targetTimestamp === 'bigint' ? Number(targetTimestamp) : targetTimestamp
-    if (target === 0) return { main: '—', sub: '' }
-    
-    const diff = target - now
-    if (diff <= 0) return { main: 'Expired', sub: formatDate(targetTimestamp) }
-    
-    const days = Math.floor(diff / 86400)
-    const hours = Math.floor((diff % 86400) / 3600)
-    const minutes = Math.floor((diff % 3600) / 60)
-    
-    // If < 1 week, show days & hours
-    if (days < 7) {
-      if (days > 0) {
-        return { main: `${days}d ${hours}h`, sub: formatDate(targetTimestamp) }
-      }
-      return { main: `${hours}h ${minutes}m`, sub: formatDate(targetTimestamp) }
-    }
-    
-    // Otherwise show years & days
-    const years = Math.floor(days / 365)
-    const remainingDays = days % 365
-    if (years > 0) {
-      return { main: `${years}y ${remainingDays}d`, sub: formatDate(targetTimestamp) }
-    }
-    return { main: `${days}d`, sub: formatDate(targetTimestamp) }
-  }
-
   const proquintName = urlParam || ''
   const isOwner = !!(proquintOwner && connectedAddress && proquintOwner.toLowerCase() === connectedAddress.toLowerCase())
   const hasPrimary = !!(primaryId && primaryId !== '0x00000000')
   const isInInbox = !!(inboxExpiryTimestamp && inboxExpiryTimestamp > 0n)
-  const [, setHasTokenImage] = useState(false)
   const [showTransferModal, setShowTransferModal] = useState(false)
   const [showBurnModal, setShowBurnModal] = useState(false)
   const [showRejectModal, setShowRejectModal] = useState(false)
   const [showCleanModal, setShowCleanModal] = useState(false)
   const [showExtendModal, setShowExtendModal] = useState(false)
+  const { items: ownerInboxItems, loading: ownerInboxLoading } = useInboxItems(proquintOwner as `0x${string}` | undefined)
+  const { events, loading: eventsLoading, lastBlock } = useEvents()
 
   const now = Math.floor(Date.now() / 1000)
   const inboxExp = inboxExpiryTimestamp ? Number(inboxExpiryTimestamp) : 0
@@ -125,17 +88,11 @@ export function ProfileInbox() {
   // For cleanInbox: if >1 month, burner gets 50%; if ≤1 month, burner gets fixed 1 month
   const cleanReward = remainingMonths > 1 ? totalRefund / 2 : PRICE_PER_MONTH_ETH
 
-  useEffect(() => {
-    setHasTokenImage(false)
-  }, [proquintBytes4])
-
   if (isLoadingOwner) {
     return (
       <div className="container">
         <div className="card">
-          <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-dim)' }}>
-            Loading...
-          </div>
+          <LoadingState message="Loading profile…" />
         </div>
       </div>
     )
@@ -170,39 +127,14 @@ export function ProfileInbox() {
       <div className="card">
         <ProfileSearchBar />
 
-        {/* Name as centerpiece */}
-        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-          <div style={{
-            ...monoStyle,
-            fontSize: 'clamp(2.2rem, 8vw, 3.5rem)',
-            fontWeight: 800,
-            color: 'var(--accent)',
-            letterSpacing: '-0.01em',
-            textTransform: 'uppercase',
-            lineHeight: 1.1,
-            marginBottom: '0.4rem',
-          }}>
-            {proquintName}
-          </div>
-          {proquintBytes4 && (
-            <div style={{ ...monoStyle, fontSize: '0.95rem', color: 'var(--text-dim)' }}>
-              {proquintBytes4}
-            </div>
-          )}
-        </div>
-
-        {/* Identicon + owner */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-          <Identicon
-            address={proquintOwner}
-            proquintId={proquintBytes4}
-            size={200}
-            onImageTypeChange={setHasTokenImage}
-          />
-          <a href={`/${proquintOwner}`} style={{ ...monoStyle, fontSize: '0.9rem', color: 'var(--text-dim)', textDecoration: 'none' }}>
-            {proquintOwner}
-          </a>
-        </div>
+        <ProfileHero
+          title={proquintName}
+          subtitle={proquintBytes4}
+          ownerAddress={proquintOwner}
+          identiconAddress={proquintOwner}
+          identiconId={proquintBytes4}
+          identiconSize={200}
+        />
 
         {/* Info grid */}
         <div className="info-grid">
@@ -228,15 +160,6 @@ export function ProfileInbox() {
               {expiryTimestamp ? formatTimeRemaining(Number(expiryTimestamp) + CONSTANTS.GRACE_PERIOD).sub : ''}
             </div>
           </div>
-          {isInInbox && (
-            <div className="info-item">
-              <div className="info-label">Claim Deadline</div>
-              <div className="info-value">{formatTimeRemaining(inboxExpiryTimestamp).main}</div>
-              <div className="info-sub" style={{ fontSize: '0.7rem', color: 'var(--text-dim)', marginTop: '0.15rem' }}>
-                {formatTimeRemaining(inboxExpiryTimestamp).sub}
-              </div>
-            </div>
-          )}
         </div>
 
         {isInInbox && proquintBytes4 && (
@@ -250,6 +173,7 @@ export function ProfileInbox() {
             canClaimOnBehalf={canClaimOnBehalf}
             canBurn={canBurn}
             expiryTimestamp={expiryTimestamp}
+            onBurnClick={isOwner && canClaim ? () => setShowRejectModal(true) : undefined}
           />
         )}
 
@@ -297,40 +221,35 @@ export function ProfileInbox() {
           />
         )}
 
-        {/* Burn button for owner before expiry */}
-        {isInInbox && isOwner && canClaim && (
-          <div className="actions" style={{ marginTop: '1.5rem' }}>
-            <button
-              onClick={() => setShowRejectModal(true)}
-              style={{ 
-                fontSize: '1rem', 
-                padding: '0.85rem 1.5rem',
-                backgroundColor: 'var(--danger)',
-                color: '#fff'
-              }}
-            >
-              Burn
-            </button>
-          </div>
-        )}
-
         {/* Clean button for anyone after expiry */}
         {isInInbox && canBurn && !isOwner && (
-          <div className="actions" style={{ marginTop: '1.5rem' }}>
+          <div className="actions" style={{ marginTop: '1.5rem', display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
             <button
               onClick={() => setShowCleanModal(true)}
               style={{ 
-                fontSize: '1rem', 
-                padding: '0.85rem 1.5rem',
+                ...compactButtonStyle,
                 backgroundColor: 'var(--success)',
                 color: '#fff'
               }}
             >
-              Burn
+              Clean
             </button>
           </div>
         )}
       </div>
+
+      {!isInInbox && (
+        <ProfileInboxItemsSection
+          inboxCount={ownerInboxItems.length}
+          items={ownerInboxItems}
+          loading={ownerInboxLoading}
+          onItemClick={(proquint) => navigate(`/${proquint.toLowerCase()}`)}
+        />
+      )}
+
+      {!isInInbox && (
+        <ProfileActivity events={events} loading={eventsLoading} lastBlock={lastBlock} />
+      )}
 
       {proquintBytes4 && (
         <>

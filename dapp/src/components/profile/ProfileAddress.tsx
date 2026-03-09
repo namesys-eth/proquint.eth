@@ -4,15 +4,22 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { createPublicClient, http } from 'viem'
 import { normalize } from 'viem/ens'
 import { mainnet } from 'wagmi/chains'
-import { CONTRACTS } from '../../libs/contracts'
+import { CONTRACTS, CONSTANTS } from '../../libs/contracts'
 import { PROQUINT_ABI } from '../../libs/abi/ERC721ABI'
 import { ProfileSearchBar } from './ProfileSearchBar'
-import { Identicon } from '../utils/Identicon'
+import { ProfileHero } from './ProfileHero'
+import { ProfileInboxAlert } from './ProfileInboxAlert'
+import { ProfileInboxItemsSection } from './ProfileInboxItemsSection'
+import { ProfileActivity } from './ProfileActivity'
 import { useInboxItems } from '../../hooks/useInboxItems'
-import { ExpiryDisplay } from '../utils/ExpiryDisplay'
-import { InboxItemCard } from '../utils/InboxItemCard'
-import { proquintNameStyle, addressStyle } from '../utils/styles'
+import { useEvents } from '../../hooks/EventIndexerContext'
+import { TransferModal } from '../modal/TransferModal'
+import { ExtendModal } from '../modal/ExtendModal'
+import { BurnModal } from '../modal/BurnModal'
+import { ActionButtons } from '../utils/ActionButtons'
+import { LoadingState } from '../utils/LoadingState'
 import { bytes4ToProquint } from '../../libs/proquint'
+import { formatTimeRemaining } from '../utils/time'
 
 const ZERO_ID = '0x00000000'
 
@@ -22,6 +29,10 @@ export function ProfileAddress() {
   const navigate = useNavigate()
   const [resolvedAddress, setResolvedAddress] = useState<`0x${string}` | null>(null)
   const [isResolving, setIsResolving] = useState(false)
+  const [showTransferModal, setShowTransferModal] = useState(false)
+  const [showExtendModal, setShowExtendModal] = useState(false)
+  const [showBurnModal, setShowBurnModal] = useState(false)
+  const { events, loading: eventsLoading, lastBlock } = useEvents()
 
   const mainnetClient = useMemo(() => createPublicClient({
     chain: mainnet,
@@ -95,13 +106,17 @@ export function ProfileAddress() {
     query: { enabled: hasPrimary },
   })
 
+  const PRICE_PER_MONTH_ETH = Number(CONSTANTS.PRICE_PER_MONTH) / 1e18
+  const now = Math.floor(Date.now() / 1000)
+  const primaryExpiryNum = primaryExpiry ? Number(primaryExpiry) : now
+  const remainingMonths = primaryExpiryNum > now ? Math.floor((primaryExpiryNum - now) / CONSTANTS.MONTH_DURATION) : 0
+  const totalRefund = remainingMonths * PRICE_PER_MONTH_ETH
+
   if (isResolving) {
     return (
       <div className="container">
         <div className="card">
-          <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-dim)' }}>
-            Loading profile...
-          </div>
+          <LoadingState message="Loading profile…" />
         </div>
       </div>
     )
@@ -135,37 +150,17 @@ export function ProfileAddress() {
       <div className="card">
         <ProfileSearchBar />
 
-        {inboxCount > 0 && isOwner && (
-          <div style={{ 
-            padding: '1rem', 
-            backgroundColor: 'color-mix(in srgb, var(--warning) 10%, transparent)', 
-            border: '1px solid color-mix(in srgb, var(--warning) 30%, transparent)',
-            borderRadius: '6px',
-            marginBottom: '1.5rem',
-            fontSize: '0.9rem',
-          }}>
-            ⚠️ <strong>Action Required:</strong> You have {inboxCount} name{inboxCount > 1 ? 's' : ''} in your inbox.
-          </div>
-        )}
+        {inboxCount > 0 && isOwner && <ProfileInboxAlert inboxCount={inboxCount} />}
 
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-          <Identicon address={targetAddress} proquintId={hasPrimary ? (primaryId as `0x${string}`) : undefined} size={160} />
-          {primaryProquint && (
-            <div
-              onClick={() => navigate(`/${primaryProquint.toLowerCase()}`)}
-              style={{
-                ...proquintNameStyle,
-                cursor: 'pointer',
-                lineHeight: 1.1,
-              }}
-            >
-              {primaryProquint}
-            </div>
-          )}
-          <div style={addressStyle}>
-            {targetAddress}
-          </div>
-        </div>
+        <ProfileHero
+          title={primaryProquint || 'NO-PRIMARY'}
+          subtitle={hasPrimary && primaryId ? String(primaryId).toLowerCase() : undefined}
+          onTitleClick={primaryProquint ? () => navigate(`/${primaryProquint.toLowerCase()}`) : undefined}
+          ownerAddress={targetAddress}
+          identiconAddress={targetAddress}
+          identiconId={hasPrimary ? (primaryId as `0x${string}`) : undefined}
+          identiconSize={180}
+        />
 
         <div className="info-grid">
           <div className="info-item">
@@ -176,55 +171,41 @@ export function ProfileAddress() {
             <div className="info-label">Inbox</div>
             <div className="info-value">{inboxCount}</div>
           </div>
+          {hasPrimary && primaryExpiry && (
+            <>
+              <div className="info-item">
+                <div className="info-label">Expires</div>
+                <div className="info-value">{formatTimeRemaining(primaryExpiry).main}</div>
+                <div className="info-sub" style={{ fontSize: '0.7rem', color: 'var(--text-dim)', marginTop: '0.15rem' }}>
+                  {formatTimeRemaining(primaryExpiry).sub}
+                </div>
+              </div>
+              <div className="info-item">
+                <div className="info-label">Grace Period</div>
+                <div className="info-value">{formatTimeRemaining(Number(primaryExpiry) + CONSTANTS.GRACE_PERIOD).main}</div>
+                <div className="info-sub" style={{ fontSize: '0.7rem', color: 'var(--text-dim)', marginTop: '0.15rem' }}>
+                  {formatTimeRemaining(Number(primaryExpiry) + CONSTANTS.GRACE_PERIOD).sub}
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
-        {/* Primary Name Expiry */}
-        {hasPrimary && primaryId && (
-          <div style={{ marginTop: '1rem' }}>
-            <ExpiryDisplay expiryTimestamp={primaryExpiry} showGracePeriod={true} compact={true} />
-          </div>
+        {isOwner && hasPrimary && (
+          <ActionButtons actions={[
+            { label: 'Extend', onClick: () => setShowExtendModal(true) },
+            { label: 'Transfer', onClick: () => setShowTransferModal(true), variant: 'secondary' },
+            { label: 'Burn', onClick: () => setShowBurnModal(true), variant: 'danger' }
+          ]} />
         )}
       </div>
 
-      {/* Inbox Items */}
-      {inboxCount > 0 && (
-        <div className="card">
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem' }}>
-            Inbox Items
-            {inboxLoading && <span style={{ fontSize: '0.8rem', color: 'var(--text-dim)', fontWeight: 400, marginLeft: '0.5rem' }}>loading...</span>}
-          </h3>
-
-          {inboxItems.length === 0 && !inboxLoading && (
-            <div style={{ 
-              textAlign: 'center', 
-              padding: '2rem', 
-              color: 'var(--text-dim)',
-              backgroundColor: 'var(--bg-secondary)',
-              borderRadius: '6px',
-            }}>
-              No inbox items found
-            </div>
-          )}
-
-          {inboxItems.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {inboxItems.map((item) => {
-                const now = Math.floor(Date.now() / 1000)
-                const inboxExp = Number(item.inboxExpiry)
-                const isExpired = inboxExp < now
-                return (
-                  <InboxItemCard
-                    key={item.id}
-                    proquint={item.proquint}
-                    isExpired={isExpired}
-                    onClick={() => navigate(`/${item.proquint.toLowerCase()}`)}
-                  />
-                )
-              })}
-            </div>
-          )}
-        </div>
-      )}
+      <ProfileInboxItemsSection
+        inboxCount={inboxCount}
+        items={inboxItems}
+        loading={inboxLoading}
+        onItemClick={(proquint) => navigate(`/${proquint.toLowerCase()}`)}
+      />
 
       {!hasPrimary && inboxCount === 0 && (
         <div className="card">
@@ -239,6 +220,38 @@ export function ProfileAddress() {
           </div>
         </div>
       )}
+
+      {isOwner && hasPrimary && primaryId && (
+        <>
+          <TransferModal
+            open={showTransferModal}
+            onClose={() => setShowTransferModal(false)}
+            nameId={primaryId as `0x${string}`}
+            proquintName={primaryProquint || ''}
+            expiryTimestamp={primaryExpiry}
+            onBurnRequest={() => {
+              setShowTransferModal(false)
+              setShowBurnModal(true)
+            }}
+          />
+          <BurnModal
+            open={showBurnModal}
+            onClose={() => setShowBurnModal(false)}
+            nameId={primaryId as `0x${string}`}
+            proquintName={primaryProquint || ''}
+            refundAmount={totalRefund}
+            remainingMonths={remainingMonths}
+          />
+          <ExtendModal
+            open={showExtendModal}
+            onClose={() => setShowExtendModal(false)}
+            nameId={primaryId as `0x${string}`}
+            currentExpiry={primaryExpiry}
+          />
+        </>
+      )}
+
+      <ProfileActivity events={events} loading={eventsLoading} lastBlock={lastBlock} />
     </div>
   )
 }
